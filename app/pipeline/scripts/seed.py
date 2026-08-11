@@ -1,0 +1,243 @@
+"""
+Idempotent seed script for PaySoft v2.
+
+Generates seed.sql containing:
+  - 1 demo organization
+  - 19 departments
+  - 385 employees with realistic Indian names and salary structures
+  - Configurations (PTax, PF/ESI thresholds)
+  - Sample declarations and leave records
+
+Usage:
+  python3 app/pipeline/scripts/seed.py > seed.sql
+  wrangler d1 execute paysoft --file=seed.sql --remote
+  wrangler d1 execute paysoft --file=seed.sql --local
+
+Idempotent: wipes all data before inserting. Safe to re-run.
+"""
+
+import json
+import random
+from datetime import datetime, timedelta
+from pathlib import Path
+
+random.seed(42)
+
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
+# --- Data ---------------------------------------------------------------------
+
+ORG_ID = "org_demo_001"
+ORG_CODE = "DEMO"
+ORG_NAME = "Makcomputers Rai Pvt Ltd"
+
+DEPARTMENTS = [
+    ("Administration", "ADM"),
+    ("Human Resources", "HR"),
+    ("Finance", "FIN"),
+    ("Information Technology", "IT"),
+    ("Sales", "SAL"),
+    ("Marketing", "MKT"),
+    ("Production", "PRD"),
+    ("Quality Assurance", "QA"),
+    ("Maintenance", "MNT"),
+    ("Stores", "STR"),
+    ("Dispatch", "DSP"),
+    ("Design", "DSN"),
+    ("Purchase", "PUR"),
+    ("R&D", "RND"),
+    ("Security", "SEC"),
+    ("Housekeeping", "HSK"),
+    ("Transport", "TRN"),
+    ("Canteen", "CNT"),
+    ("Legal", "LEG"),
+]
+
+FIRST_NAMES = [
+    "Aarav", "Vivaan", "Aditya", "Vihaan", "Arjun", "Sai", "Reyansh", "Ayaan",
+    "Krishna", "Ishaan", "Ananya", "Diya", "Myra", "Sara", "Aanya", "Aadhya",
+    "Isha", "Riya", "Priya", "Neha", "Rahul", "Amit", "Suresh", "Vikram",
+    "Deepak", "Pooja", "Kavita", "Sunita", "Rajesh", "Sanjay", "Meera",
+    "Nisha", "Preeti", "Vijay", "Ajay", "Ramesh", "Mahesh", "Dinesh",
+    "Lakshmi", "Savita", "Geeta", "Anil", "Manoj", "Tarun", "Nitin",
+    "Pankaj", "Ashish", "Mohan", "Lalit", "Yogesh", "Ganesh", "Jagdish",
+    "Rohit", "Saurabh", "Gaurav", "Mohit", "Naveen", "Pawan", "Ravi",
+    "Shyam", "Bharat", "Kiran", "Swati", "Shruti", "Pallavi", "Poonam",
+    "Ranjit", "Harish", "Dharmendra", "Brijesh", "Naresh", "Satish",
+    "Ankita", "Divya", "Ritika", "Shweta", "Tanvi", "Nidhi", "Komal",
+    "Sonali", "Mamta", "Sakshi", "Shraddha", "Jyoti", "Sudha", "Kamla",
+    "Rani", "Bimla", "Chandra", "Uma", "Sita", "Radha", "Parvati",
+]
+
+LAST_NAMES = [
+    "Sharma", "Verma", "Gupta", "Singh", "Kumar", "Patel", "Reddy", "Nair",
+    "Menon", "Iyer", "Joshi", "Mishra", "Pandey", "Tiwari", "Dubey",
+    "Srivastava", "Agarwal", "Saxena", "Chaturvedi", "Bhat", "Rao", "Desai",
+    "Pillai", "Kulkarni", "Ghosh", "Banerjee", "Mukherjee", "Chatterjee",
+    "Das", "Bose", "Sen", "Roy", "Malhotra", "Kapoor", "Mehta", "Chopra",
+    "Seth", "Thakur", "Chauhan", "Rathore", "Tomar", "Pawar", "More",
+    "Kadam", "Shinde", "Patil", "Jadhav", "Bhosale", "Mahajan",
+    "Deshmukh", "Gaikwad", "Wagh", "Dixit", "Hegde",
+]
+
+# --- Helpers ------------------------------------------------------------------
+
+def uid(prefix, *parts):
+    return f"{prefix}_{'_'.join(parts)}".replace(" ", "_").lower()
+
+def iso_date(d):
+    return d.strftime("%Y-%m-%d")
+
+def random_date(start_year, end_year):
+    start = datetime(start_year, 1, 1)
+    end = datetime(end_year, 12, 31)
+    delta = (end - start).days
+    return iso_date(start + timedelta(days=random.randint(0, delta)))
+
+def sql_str(s):
+    return "'" + s.replace("'", "''") + "'"
+
+def sql_val(v):
+    if v is None:
+        return "NULL"
+    if isinstance(v, (int, float)):
+        return str(v)
+    return sql_str(str(v))
+
+# --- Generators ---------------------------------------------------------------
+
+def generate_organization():
+    return "\n".join([
+        "-- Wipe all data (idempotent)",
+        "DELETE FROM salary_records;",
+        "DELETE FROM declarations;",
+        "DELETE FROM leave_records;",
+        "DELETE FROM employees;",
+        "DELETE FROM departments;",
+        "DELETE FROM configurations;",
+        "DELETE FROM audit_logs;",
+        "DELETE FROM organizations;",
+        "",
+        "-- Organization",
+        f"INSERT INTO organizations (id, name, code, address, state_code, created_at) "
+        f"VALUES ({sql_val(ORG_ID)}, {sql_str(ORG_NAME)}, {sql_str(ORG_CODE)}, "
+        f"{sql_str('123 Industrial Area, Pune, Maharashtra')}, 'MH', unixepoch());",
+    ])
+
+def generate_departments():
+    lines = ["", "-- Departments"]
+    for name, code in DEPARTMENTS:
+        dept_id = uid("dept", code.lower())
+        lines.append(
+            f"INSERT INTO departments (id, org_id, name, code, created_at) "
+            f"VALUES ({sql_val(dept_id)}, {sql_val(ORG_ID)}, {sql_str(name)}, {sql_str(code)}, unixepoch());"
+        )
+    return "\n".join(lines)
+
+def generate_employees():
+    lines = ["", "-- Employees"]
+    dept_ids = [uid("dept", code.lower()) for _, code in DEPARTMENTS]
+
+    total_employees = 385
+    weights = [15, 12, 10, 25, 30, 18, 40, 15, 12, 10, 8, 15, 10, 8, 20, 15, 12, 10, 5]
+    weights = [max(1, w) for w in weights]
+    total_weight = sum(weights)
+
+    emp_num = 1
+    for dept_idx, dept_id in enumerate(dept_ids):
+        count = round(total_employees * weights[dept_idx] / total_weight)
+        count = max(1, count)
+        for _ in range(count):
+            if emp_num > total_employees:
+                break
+            emp_id = uid("emp", f"{emp_num:04d}")
+            code = f"EMP{emp_num:04d}"
+            first = random.choice(FIRST_NAMES)
+            last = random.choice(LAST_NAMES)
+            basic = random.choice([15000, 18000, 22000, 25000, 30000, 35000, 40000, 50000, 60000, 75000, 90000, 120000])
+            da_pct = random.choice([0, 4, 5, 8, 12])
+            hra_pct = random.choice([40, 50])
+            allowances = json.dumps({"conveyance": 1600, "medical": 1250, "special": round(basic * 0.10)})
+            pan = f"ABCDE{random.randint(1000,9999)}F"
+            aadhaar = f"{random.randint(1000,9999)} {random.randint(1000,9999)} {random.randint(1000,9999)}"
+            pf_uan = f"100{random.randint(10000000,99999999)}"
+            esi = f"31{random.randint(10000000,99999999)}" if basic <= 21000 else None
+            dob = random_date(1960, 2002)
+            doj = random_date(2010, 2025)
+            doa = doj
+            gender = random.choice(["M", "F"])
+            regime = random.choice(["old", "new"])
+            bank = random.choice(["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB", "Canara"])
+            acct = str(random.randint(1000000000, 9999999999))
+            ifsc = f"{bank[:4]}0{random.randint(100000,999999)}"
+            phone = f"{random.choice([6,7,8,9])}{random.randint(100000000,999999999)}"
+            email = f"{first.lower()}.{last.lower()}@example.com"
+
+            cols = "(id, org_id, department_id, code, first_name, last_name, email, phone, date_of_birth, gender, pan_number, aadhaar_number, pf_uan, esi_number, date_of_joining, date_of_appointment, status, basic_pay, da_percent, hra_percent, allowances, bank_name, bank_account, bank_ifsc, tax_regime, created_at, updated_at)"
+            vals = (f"{sql_val(emp_id)}, {sql_val(ORG_ID)}, {sql_val(dept_id)}, {sql_str(code)}, {sql_str(first)}, {sql_str(last)}, {sql_str(email)}, {sql_str(phone)}, {sql_str(dob)}, {sql_str(gender)}, {sql_str(pan)}, {sql_str(aadhaar)}, {sql_val(pf_uan)}, {sql_val(esi)}, {sql_str(doj)}, {sql_str(doa)}, 'active', {basic}, {da_pct}, {hra_pct}, {sql_str(allowances)}, {sql_str(bank)}, {sql_str(acct)}, {sql_str(ifsc)}, {sql_str(regime)}, unixepoch(), unixepoch()")
+            lines.append(f"INSERT INTO employees {cols} VALUES ({vals});")
+            emp_num += 1
+
+    return "\n".join(lines)
+
+def generate_configurations():
+    configs = [
+        ("ptax_mh", "200", "Maharashtra Professional Tax per month"),
+        ("pf_employee_rate", "12", "Employee PF rate percent"),
+        ("pf_employer_eps_cap_basic", "15000", "EPS cap on basic pay"),
+        ("pf_eps_rate", "8.33", "EPS rate percent"),
+        ("pf_epf_rate", "3.67", "EPF rate percent"),
+        ("esi_employee_rate", "0.75", "Employee ESI rate percent"),
+        ("esi_employer_rate", "3.25", "Employer ESI rate percent"),
+        ("esi_gross_threshold", "21000", "ESI eligibility gross threshold"),
+        ("pf_gross_threshold", "15000", "PF eligibility gross threshold"),
+    ]
+    lines = ["", "-- Configurations"]
+    for i, (key, val, desc) in enumerate(configs):
+        cid = uid("cfg", key)
+        lines.append(
+            f"INSERT INTO configurations (id, org_id, key, value, description, updated_at) "
+            f"VALUES ({sql_val(cid)}, {sql_val(ORG_ID)}, {sql_str(key)}, {sql_str(val)}, {sql_str(desc)}, unixepoch());"
+        )
+    return "\n".join(lines)
+
+def generate_declarations():
+    lines = ["", "-- Sample Declarations (10 random employees)"]
+    emp_ids = [uid("emp", f"{i:04d}") for i in range(1, 11)]
+    for emp_id in emp_ids:
+        decl_id = uid("decl", emp_id[-4:], "80c")
+        lines.append(
+            f"INSERT INTO declarations (id, org_id, employee_id, fiscal_year, type, amount, status, created_at, updated_at) "
+            f"VALUES ({sql_val(decl_id)}, {sql_val(ORG_ID)}, {sql_val(emp_id)}, '2025-26', '80c', 150000, 'pending', unixepoch(), unixepoch());"
+        )
+    return "\n".join(lines)
+
+def generate_leave_records():
+    lines = ["", "-- Sample Leave Records (10 random employees)"]
+    emp_ids = [uid("emp", f"{i:04d}") for i in range(1, 11)]
+    for emp_id in emp_ids:
+        leave_id = uid("leave", emp_id[-4:])
+        start = random_date(2025, 2025)
+        end = random_date(2025, 2025)
+        ltype = random.choice(["casual", "sick", "earned"])
+        lines.append(
+            f"INSERT INTO leave_records (id, org_id, employee_id, type, start_date, end_date, days, status, created_at, updated_at) "
+            f"VALUES ({sql_val(leave_id)}, {sql_val(ORG_ID)}, {sql_val(emp_id)}, {sql_str(ltype)}, {sql_str(start)}, {sql_str(end)}, 1, 'pending', unixepoch(), unixepoch());"
+        )
+    return "\n".join(lines)
+
+# --- Main ---------------------------------------------------------------------
+
+if __name__ == "__main__":
+    parts = [
+        generate_organization(),
+        generate_departments(),
+        generate_employees(),
+        generate_configurations(),
+        generate_declarations(),
+        generate_leave_records(),
+    ]
+    out = "\n".join(parts) + "\n"
+    out_file = ROOT / "app/data/processed/seed.sql"
+    out_file.write_text(out)
+    print(f"Generated {out_file} ({len(out)} bytes)")
