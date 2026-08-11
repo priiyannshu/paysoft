@@ -9,5 +9,10 @@ export default defineWorkersConfig({
         },
       },
     },
+    server: {
+      deps: {
+        inline: [/@lucia-auth/, /lucia/, /drizzle-orm/, /drizzle-kit/],
+      },
+    },
   },
 })
