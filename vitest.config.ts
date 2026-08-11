@@ -1,12 +1,17 @@
-import { defineConfig } from '@cloudflare/vitest-pool-workers/config'
+import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
 
-export default defineConfig({
+export default defineWorkersConfig({
   test: {
     poolOptions: {
       workers: {
         wrangler: {
           configPath: './wrangler.jsonc',
         },
+      },
+    },
+    server: {
+      deps: {
+        inline: [/@lucia-auth/, /lucia/, /drizzle-orm/, /drizzle-kit/],
       },
     },
   },
