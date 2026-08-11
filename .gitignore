@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.wrangler/
+.dev.vars
+.dev.vars.*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Generated PWA data (rebuild via pipeline, don't commit)
+app/pwa/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# opencode native config (per-project, not committed)
+.opencode/
+.agents/
+
+# Personal memory files
+CLAUDE.local.md

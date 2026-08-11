@@ -1,0 +1,26 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "paysoft",
+	"main": "app/cf-worker/index.ts",
+	"compatibility_date": "2026-01-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": "./app/pwa",
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "paysoft",
+			"database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+			"migrations_dir": "app/pipeline/migrations"
+		},
+		{
+			"binding": "paysoft",
+			"database_name": "paysoft",
+			"database_id": "033e9f6e-7aef-4c8c-bd12-d8498e536935"
+		}
+	]
+}

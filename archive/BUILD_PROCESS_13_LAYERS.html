@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaySoft v2: 13-Layer Build Process</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-alt: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #7ee787;
+  --accent3: #d2a8ff;
+  --accent4: #ff7b72;
+  --accent5: #ffa657;
+  --accent6: #f0f6fc;
+  --layer-1: #58a6ff;
+  --layer-2: #7ee787;
+  --layer-3: #d2a8ff;
+  --layer-4: #ff7b72;
+  --layer-5: #ffa657;
+  --layer-6: #f0f6fc;
+  --layer-7: #a5d6ff;
+  --layer-8: #ff9bce;
+  --layer-9: #ffd97e;
+  --layer-10: #9af0c4;
+  --layer-11: #c9d1d9;
+  --layer-12: #ffb3b3;
+  --layer-13: #d2b8ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  display: flex;
+}
+nav {
+  position: fixed;
+  top: 0; left: 0;
+  width: 260px;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  font-size: 0.85rem;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
+nav h3 {
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+nav a {
+  display: block;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 4px 8px;
+  margin: 2px 0;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+nav a:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+nav a.layer-link {
+  font-weight: 600;
+  border-left: 3px solid;
+  padding-left: 10px;
+  margin: 6px 0;
+}
+nav a.sub-link { padding-left: 24px; font-size: 0.8rem; }
+main {
+  margin-left: 260px;
+  padding: 48px 60px;
+  transition: margin-left 0.25s ease;
+}
+main.expanded {
+  margin-left: 0;
+}
+h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, var(--accent), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 56px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  color: var(--accent2);
+}
+h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: var(--accent3);
+}
+p { margin-bottom: 14px; color: var(--text); }
+.subtitle { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 32px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+.layer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin: 32px 0;
+}
+.layer-1 { border-left-color: var(--layer-1); }
+.layer-2 { border-left-color: var(--layer-2); }
+.layer-3 { border-left-color: var(--layer-3); }
+.layer-4 { border-left-color: var(--layer-4); }
+.layer-5 { border-left-color: var(--layer-5); }
+.layer-6 { border-left-color: var(--layer-6); }
+.layer-7 { border-left-color: var(--layer-7); }
+.layer-8 { border-left-color: var(--layer-8); }
+.layer-9 { border-left-color: var(--layer-9); }
+.layer-10 { border-left-color: var(--layer-10); }
+.layer-11 { border-left-color: var(--layer-11); }
+.layer-12 { border-left-color: var(--layer-12); }
+.layer-13 { border-left-color: var(--layer-13); }
+.layer-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 8px;
+}
+.badge-1 { background: rgba(88,166,255,0.15); color: var(--layer-1); }
+.badge-2 { background: rgba(126,231,135,0.15); color: var(--layer-2); }
+.badge-3 { background: rgba(210,168,255,0.15); color: var(--layer-3); }
+.badge-4 { background: rgba(255,123,114,0.15); color: var(--layer-4); }
+.badge-5 { background: rgba(255,166,87,0.15); color: var(--layer-5); }
+.badge-6 { background: rgba(240,246,252,0.1); color: var(--layer-6); }
+.badge-7 { background: rgba(165,214,255,0.15); color: var(--layer-7); }
+.badge-8 { background: rgba(255,155,206,0.15); color: var(--layer-8); }
+.badge-9 { background: rgba(255,217,126,0.15); color: var(--layer-9); }
+.badge-10 { background: rgba(154,240,196,0.15); color: var(--layer-10); }
+.badge-11 { background: rgba(201,209,217,0.15); color: var(--layer-11); }
+.badge-12 { background: rgba(255,179,179,0.15); color: var(--layer-12); }
+.badge-13 { background: rgba(210,184,255,0.15); color: var(--layer-13); }
+.mermaid {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: var(--surface-alt);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+tr:hover td { background: rgba(88,166,255,0.04); }
+code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85em;
+  background: var(--surface-alt);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent5);
+}
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-size: 0.85rem;
+}
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--text);
+}
+ul, ol {
+  margin: 12px 0 12px 24px;
+}
+li { margin: 6px 0; }
+strong { color: var(--accent6); }
+em { color: var(--accent3); }
+blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 12px 20px;
+  margin: 16px 0;
+  background: rgba(88,166,255,0.05);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-muted);
+}
+.diagram-ref {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+}
+.diagram-ref a {
+  display: block;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.diagram-ref a:hover {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+}
+.tech-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  margin: 2px;
+  border-radius: 4px;
+  background: var(--surface-alt);
+  color: var(--accent2);
+  border: 1px solid var(--border);
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+details { margin: 12px 0; }
+.nav-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-toggle:hover { background: var(--surface-alt); border-color: var(--accent); }
+nav.collapsed { transform: translateX(-100%); }
+@media (max-width: 1000px) {
+  body { flex-direction: column; }
+  nav { position: relative; width: 100%; height: auto; transform: none; }
+  nav.collapsed { display: none; }
+  .nav-toggle { display: block; }
+  main { margin-left: 0; padding: 24px 20px; }
+  .diagram-ref { grid-template-columns: 1fr; }
+}
+@media (min-width: 1001px) {
+  .nav-toggle { display: block; }
+}
+</style>
+</head>
+<body>
+
+<button class="nav-toggle" id="navToggle" title="Toggle navigation">&#9776;</button>
+
+<nav id="mainNav">
+<h3>Navigation</h3>
+<a href="#overview" class="layer-link" style="border-color:var(--accent)">Overview</a>
+<a href="#diagram-ref" class="sub-link">Diagram Reference</a>
+<a href="#layer-1" class="layer-link" style="border-color:var(--layer-1)">Layer 1: Frontend</a>
+<a href="#layer-2" class="layer-link" style="border-color:var(--layer-2)">Layer 2: Backend & APIs</a>
+<a href="#layer-3" class="layer-link" style="border-color:var(--layer-3)">Layer 3: Database & Storage</a>
+<a href="#layer-4" class="layer-link" style="border-color:var(--layer-4)">Layer 4: Auth & Permissions</a>
+<a href="#layer-5" class="layer-link" style="border-color:var(--layer-5)">Layer 5: Hosting & Deployment</a>
+<a href="#layer-6" class="layer-link" style="border-color:var(--layer-6)">Layer 6: Cloud & Compute</a>
+<a href="#layer-7" class="layer-link" style="border-color:var(--layer-7)">Layer 7: CI/CD & Version Control</a>
+<a href="#layer-8" class="layer-link" style="border-color:var(--layer-8)">Layer 8: Security & RLS</a>
+<a href="#layer-9" class="layer-link" style="border-color:var(--layer-9)">Layer 9: Rate-Limiting</a>
+<a href="#layer-10" class="layer-link" style="border-color:var(--layer-10)">Layer 10: Caching & CDN</a>
+<a href="#layer-11" class="layer-link" style="border-color:var(--layer-11)">Layer 11: Load Balancing & Scaling</a>
+<a href="#layer-12" class="layer-link" style="border-color:var(--layer-12)">Layer 12: Error Tracking & Logs</a>
+<a href="#layer-13" class="layer-link" style="border-color:var(--layer-13)">Layer 13: Availability & Recovery</a>
+<a href="#together" class="layer-link" style="border-color:var(--accent2)">How They Work Together</a>
+<a href="#summary" class="layer-link" style="border-color:var(--accent3)">Summary Table</a>
+</nav>
+
+<main>
+<h1>PaySoft v2: Build Process</h1>
+<p class="subtitle">Mapped to 13 production tech stack layers — a complete deep dive from frontend to disaster recovery.</p>
+
+<hr>
+
+<h2 id="overview">Overview: The 13-Layer Stack</h2>
+
+<div class="mermaid">
+graph TB
+    subgraph "User-Facing"
+        L1["1. Frontend\nAstro + Tailwind"]
+        L9["9. Rate-Limiting\nWorkers API + DO Lock"]
+    end
+
+    subgraph "Core Logic"
+        L2["2. Backend Logic & APIs\nHono.js on Workers"]
+        L4["4. Auth & Permissions\nAccess + Lucia Auth"]
+        L8["8. Security & RLS\nTurnstile + RLS Queries"]
+    end
+
+    subgraph "Data"
+        L3["3. Database & Storage\nD1 + R2 + Drizzle"]
+        L10["10. Caching & CDN\nKV + Pages CDN"]
+    end
+
+    subgraph "Infrastructure"
+        L5["5. Hosting & Deployment\nPages + Workers"]
+        L6["6. Cloud & Compute\nWorkers + DO + AI"]
+        L11["11. Load Balancing & Scaling\nCloudflare Auto-scale"]
+    end
+
+    subgraph "Operations"
+        L7["7. CI/CD & Version Control\nGitHub Actions + Projects"]
+        L12["12. Error Tracking & Logs\nWorkers Logs + Audit Engine"]
+        L13["13. Availability & Recovery\nGit Rollback + Zero Downtime"]
+    end
+
+    L1 --> L5
+    L1 --> L10
+    L2 --> L3
+    L2 --> L6
+    L4 --> L3
+    L4 --> L8
+    L7 --> L5
+    L8 --> L3
+    L9 --> L2
+    L10 --> L2
+    L11 --> L5
+    L11 --> L6
+    L12 --> L2
+    L13 --> L7
+    L13 --> L3
+</div>
+
+<h2 id="diagram-ref">Diagram Reference</h2>
+<p>All mermaid diagrams are embedded and rendered in this document. Below is a quick index:</p>
+
+<div class="diagram-ref">
+<a href="#overview">01 — Overview: All 13 layers interconnected</a>
+<a href="#diag-engines">02 — The 7 backend engines</a>
+<a href="#diag-cicd">03 — CI/CD pipeline flow</a>
+<a href="#diag-security">04 — Security layers (defense in depth)</a>
+<a href="#diag-cache">05 — Caching & CDN tiers</a>
+<a href="#diag-scaling">06 — Scaling architecture</a>
+<a href="#diag-er">07 — Database schema (ER diagram)</a>
+<a href="#diag-rbac">08 — RBAC matrix</a>
+<a href="#together">09 — Payroll run (cross-layer flow)</a>
+<a href="#diag-disaster">10 — Disaster recovery</a>
+</div>
+
+<hr>
+
+<!-- LAYER 1 -->
+<div class="layer-card layer-1">
+<h2 id="layer-1"><span class="layer-badge badge-1">Layer 1</span> Frontend</h2>
+
+<h3>What We Build</h3>
+<p>The entire user-facing interface of PaySoft v2 — every screen that HR managers, accountants, and employees interact with:</p>
+<ul>
+<li><strong>Dashboard</strong> — Main control panel with system configuration (salary rules, PF settings, authorized signatory), the Smart Audit Checklist (live diagnostics on data quality), and the Monthly Financial Summary Table.</li>
+<li><strong>Employee Master</strong> — The most data-dense screen: personal details, key dates, statutory identifiers (PAN, Aadhaar, PF UAN, ESI), earnings columns (Basic, DA, HRA, allowances), deductions (PF, TDS, PTax), real-time tax computation, bank details.</li>
+<li><strong>Salary Statistics</strong> — Payroll summary for the current month, payment type breakdowns, department-level snapshots, yearly trend charts.</li>
+<li><strong>Annual Statements</strong> — Individual employee Earning Card showing 12 months (April–March) with gross earnings, split PF deductions, and net salary.</li>
+<li><strong>Reports Menu</strong> — Every exportable document: payslips, bank reports, TDS reports (Form 16, 26Q), PF ECR, ESI returns, Excel extracts.</li>
+<li><strong>Employee Self-Service Portal</strong> — Payslip downloads, Form 12BB uploads, leave applications, Tax Regime Simulator.</li>
+<li><strong>Tax/HR Chatbot Interface</strong> — Embedded AI assistant for employee queries.</li>
+</ul>
+
+<h3>Technology: Astro</h3>
+<p>We use <strong>Astro</strong> as the frontend framework. Astro is ideal for PaySoft because:</p>
+<ul>
+<li><strong>Islands architecture</strong> — The app is mostly forms, tables, and static content. Astro ships zero JavaScript by default and only hydrates interactive components (charts, data grids, audit checklist). This means the dashboard loads instantly even on slow connections in Indian schools/colleges.</li>
+<li><strong>Framework-agnostic islands</strong> — We can use React islands for complex interactive components (TanStack Table, Recharts charts, tax computation boxes that update in real-time) while keeping the rest as server-rendered HTML.</li>
+<li><strong>Content collections</strong> — For static pages, documentation, and report templates, Astro's content collections provide type-safe, built-time rendering.</li>
+<li><strong>SSR with Cloudflare adapter</strong> — Astro deploys directly to Cloudflare Workers via <code>@astrojs/cloudflare</code>, meaning the frontend and backend share the same edge network. No separate hosting needed.</li>
+</ul>
+
+<h3>Supporting Tech</h3>
+<p>
+<span class="tech-tag">Tailwind CSS</span>
+<span class="tech-tag">Shadcn UI</span>
+<span class="tech-tag">TanStack Table</span>
+<span class="tech-tag">Recharts / Tremor</span>
+<span class="tech-tag">@astrojs/cloudflare</span>
+</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>Initialize Astro project with Cloudflare adapter.</li>
+<li>Set up Tailwind + Shadcn UI component library.</li>
+<li>Build page routes: <code>/dashboard</code>, <code>/employees</code>, <code>/employees/:id</code>, <code>/salary-stats</code>, <code>/annual-statements</code>, <code>/reports</code>, <code>/ess</code>, <code>/admin</code>.</li>
+<li>Create shared layout with sidebar navigation mirroring the Reports menu structure.</li>
+<li>Build each screen as an Astro page with islands for interactive components.</li>
+<li>Integrate TanStack Table island for all tabular data.</li>
+<li>Add chatbot UI component (Workers AI streaming).</li>
+</ol>
+</div>
+
+<!-- LAYER 2 -->
+<div class="layer-card layer-2">
+<h2 id="layer-2"><span class="layer-badge badge-2">Layer 2</span> Backend Logic & APIs</h2>
+
+<h3>What We Build</h3>
+<p>Seven specialized backend engines that form the brain of PaySoft. Each engine is a set of API endpoints running on Cloudflare Workers via Hono.js, with a clear responsibility boundary.</p>
+
+<div class="mermaid" id="diag-engines">
+graph LR
+    Client["Client Request"] --> Auth["Engine 1\nAuth & RBAC"]
+    
+    Auth --> Audit["Engine 2\nSmart Audit"]
+    Auth --> Pay["Engine 4\nPayroll Execution"]
+    Auth --> ESS["Engine 5\nESS & Tax Declarations"]
+    
+    Pay --> Tax["Engine 3\nStatutory Calculation"]
+    Pay --> Doc["Engine 6\nDocument Generation"]
+    
+    Doc --> Dispatch["Engine 7\nNotification & Dispatch"]
+
+    Tax <--> D1["(D1)"]
+    Doc <--> R2["(R2)"]
+    Pay <--> DO["Durable Objects"]
+    Auth <--> KV["(KV)"]
+</div>
+
+<h3>Technology: Hono.js on Cloudflare Workers</h3>
+<p><strong>Hono.js</strong> is our HTTP router. It's specifically designed for edge runtimes with zero dependencies, extremely fast performance (uses WebStandard API), and built-in middleware: JWT auth, CORS, rate limiting, plus RPC mode for type-safe client-server communication with our Astro frontend.</p>
+
+<h3>Engine 1: Auth, RBAC & Multi-Tenant Engine</h3>
+<ul>
+<li><strong>Input:</strong> Login credentials, session tokens.</li>
+<li><strong>Process:</strong> Validate credentials against D1, issue JWT with role + org_id claims. Every subsequent request includes the JWT; middleware extracts org_id and injects it into the request context.</li>
+<li><strong>Output:</strong> Authenticated session, RBAC-enforced route access.</li>
+<li><strong>Endpoints:</strong> <code>POST /auth/login</code>, <code>POST /auth/logout</code>, <code>GET /auth/me</code>, <code>POST /auth/refresh</code>.</li>
+</ul>
+
+<h3>Engine 2: Smart Audit & Validation Engine</h3>
+<ul>
+<li><strong>Input:</strong> Organization ID.</li>
+<li><strong>Process:</strong> Query D1 for all employees, scan for missing PAN, Aadhaar, bank details, PF/ESI numbers. Check senior citizen age thresholds (60/80). Verify prior-month payroll freeze status.</li>
+<li><strong>Output:</strong> JSON audit report with severity levels (Critical / Warning / Info).</li>
+<li><strong>Endpoints:</strong> <code>GET /audit/run</code>, <code>GET /audit/status/:orgId</code>.</li>
+</ul>
+
+<h3>Engine 3: Statutory Calculation Engine (The Math Brain)</h3>
+<ul>
+<li><strong>Input:</strong> Salary structure (basic, allowances) + declarations (80C, 80D, 24b, HRA exemption proof) + tax regime choice.</li>
+<li><strong>Process:</strong> Pure functions (no side effects, no DB calls):
+  <ul>
+  <li><strong>Income Tax:</strong> Apply Old or New Regime slabs (FY 2025-26). Calculate HRA exemption as min(actual HRA, 50%/40% of basic, rent paid - 10% of basic). Deduct 80C (1.5L cap), 80D, 24b. Apply Section 87A rebate. Add surcharge and 4% Health & Education Cess.</li>
+  <li><strong>EPF:</strong> Employee 12% of basic. Employer split: 8.33% EPS (capped at 15,000 basic = 1,250/month max), 3.67% EPF.</li>
+  <li><strong>ESI:</strong> Employee 0.75%, Employer 3.25%. Only if gross ≤ 21,000/month.</li>
+  <li><strong>PTax:</strong> State-specific slab lookup from KV cache.</li>
+  </ul>
+</li>
+<li><strong>Output:</strong> Complete deduction breakdown object.</li>
+<li><strong>Endpoints:</strong> <code>POST /tax/calculate</code>, <code>POST /tax/simulate</code>.</li>
+<li><strong>Why pure functions:</strong> 100% unit-testable. No mocking. Salary in, numbers out.</li>
+</ul>
+
+<h3>Engine 4: Payroll Execution & Disbursal Engine</h3>
+<ul>
+<li><strong>Input:</strong> Month + year + org ID + attendance data.</li>
+<li><strong>Process:</strong>
+  <ol>
+  <li>Acquire Durable Object lock (prevents concurrent payroll runs for same org/month).</li>
+  <li>For each employee: calculate LOP = (Basic + DA) / working days × unpaid days.</li>
+  <li>Add arrears (delta between old and new salary × retroactive months).</li>
+  <li>Add bonuses, increments, subtract advance recoveries.</li>
+  <li>Call Engine 3 to compute statutory deductions.</li>
+  <li>Produce final net pay.</li>
+  <li>Write salary records to D1.</li>
+  <li>Freeze the month (immutable).</li>
+  <li>Release lock.</li>
+  </ol>
+</li>
+<li><strong>Output:</strong> Payroll run result with per-employee breakdown.</li>
+<li><strong>Endpoints:</strong> <code>POST /payroll/run</code>, <code>GET /payroll/status/:runId</code>, <code>POST /payroll/freeze/:monthId</code>.</li>
+<li><strong>Lifecycle:</strong> Draft → Processing → Computed → Frozen.</li>
+</ul>
+
+<h3>Engine 5: ESS & Tax Declaration Engine</h3>
+<ul>
+<li><strong>Input:</strong> Employee-submitted declarations (Form 12BB), leave applications.</li>
+<li><strong>Process:</strong> Form 12BB: Employee submits → HR reviews → Approved/Rejected → Fed into Engine 3 for revised TDS projection. Tax Regime Simulator: Calls Engine 3 twice (once per regime), returns comparison. Leave: Apply → Approve/Reject → Balance tracking in D1.</li>
+<li><strong>Endpoints:</strong> <code>POST /ess/declaration</code>, <code>GET /ess/declarations</code>, <code>POST /ess/leave</code>, <code>POST /ess/simulate-regime</code>.</li>
+</ul>
+
+<h3>Engine 6: Document Generation Engine</h3>
+<ul>
+<li><strong>Input:</strong> Payroll run ID + document type.</li>
+<li><strong>Process:</strong>
+  <ul>
+  <li><strong>PDF Payslips:</strong> <code>@react-pdf/renderer</code> renders HTML-like components to PDF. Password-protected (employee DOB as default password).</li>
+  <li><strong>Form 16 Part B:</strong> Annual tax certificate rendered as PDF with employee's full-year TDS details.</li>
+  <li><strong>EPF ECR File:</strong> Custom text generator for the exact format EPFO portal expects.</li>
+  <li><strong>ESI Return File:</strong> Monthly contribution report in ESIC format.</li>
+  <li><strong>Bank Transfer Advice:</strong> CSV/XLSX formatted for bulk salary credit.</li>
+  <li><strong>Bulk Generation:</strong> Queue-based. 500 payslips generated asynchronously, stored in R2, ZIP download link returned.</li>
+  </ul>
+</li>
+<li><strong>Endpoints:</strong> <code>POST /docs/payslip</code>, <code>POST /docs/form16</code>, <code>POST /docs/ecr</code>, <code>POST /docs/bank-advice</code>, <code>GET /docs/download/:fileId</code>.</li>
+</ul>
+
+<h3>Engine 7: Notification & Dispatch Engine</h3>
+<ul>
+<li><strong>Input:</strong> Event trigger (payroll finalized, payslip generated, compliance deadline approaching).</li>
+<li><strong>Process:</strong> Enqueue notification via Cloudflare Queues. Worker picks up queue message and dispatches via Email (Resend API), WhatsApp Business API, or SMS.</li>
+<li><strong>Endpoints:</strong> <code>POST /notify/dispatch</code> (internal, triggered by Engine 4/6 events).</li>
+</ul>
+
+<h3>Build Process</h3>
+<ol>
+<li>Initialize Hono.js app with Cloudflare Worker bindings (D1, R2, KV, DO, Queues).</li>
+<li>Set up middleware chain: CORS → JWT validation → org_id injection → RBAC check.</li>
+<li>Implement Engine 1 (auth) first — everything else depends on it.</li>
+<li>Implement Engine 3 (tax) as pure functions — write unit tests simultaneously.</li>
+<li>Implement Engine 4 (payroll) with Durable Object integration.</li>
+<li>Implement Engines 2, 5, 6, 7 in parallel.</li>
+<li>Add RPC types for type-safe frontend integration with Astro.</li>
+</ol>
+</div>
+
+<!-- LAYER 3 -->
+<div class="layer-card layer-3">
+<h2 id="layer-3"><span class="layer-badge badge-3">Layer 3</span> Database & Storage</h2>
+
+<h3>What We Build</h3>
+<p>The persistence layer: relational data in D1, file storage in R2, and the ORM layer (Drizzle) that connects them to our Workers code.</p>
+
+<h3>Technology: Cloudflare D1 + Drizzle ORM</h3>
+<p><strong>D1</strong> is Cloudflare's serverless SQLite database running at the edge. Full SQL support (joins, aggregations, transactions), low latency (same edge network as Workers), no connection pooling needed, and built-in point-in-time recovery (30-day backup window).</p>
+<p><strong>Drizzle ORM</strong> provides type-safe queries (schema defined in TypeScript, queries infer return types), SQL-like API (no magic, easy to debug), migration generation, and D1 native driver.</p>
+
+<h3>D1 Schema Design</h3>
+<div class="mermaid" id="diag-er">
+erDiagram
+    organizations {
+        id text PK
+        name text
+        created_at integer
+    }
+    departments {
+        id text PK
+        org_id text FK
+        name text
+    }
+    employees {
+        id text PK
+        org_id text FK
+        department_id text FK
+        code text
+        first_name text
+        last_name text
+        pan_number text
+        aadhaar_number text
+        pf_uan text
+        esi_number text
+        date_of_birth text
+        basic_pay real
+        status text
+    }
+    salary_records {
+        id text PK
+        employee_id text FK
+        org_id text FK
+        month integer
+        year integer
+        gross_earnings real
+        total_deductions real
+        net_pay real
+        tds real
+        pf_employee real
+        pf_employer real
+        status text
+    }
+    configurations {
+        id text PK
+        org_id text FK
+        key text
+        value text
+    }
+    audit_logs {
+        id text PK
+        org_id text FK
+        type text
+        severity text
+        message text
+    }
+    declarations {
+        id text PK
+        employee_id text FK
+        org_id text FK
+        type text
+        amount real
+        status text
+        fiscal_year text
+    }
+    leave_records {
+        id text PK
+        employee_id text FK
+        org_id text FK
+        type text
+        start_date text
+        end_date text
+        status text
+    }
+</div>
+
+<h3>R2 Bucket Structure</h3>
+<pre><code>paysoft-uploads/
+├── payslips/
+│   └── {orgId}/{year}/{month}/{employeeId}.pdf
+├── form16/
+│   └── {orgId}/{fiscalYear}/{employeeId}.pdf
+├── bank-advice/
+│   └── {orgId}/{year}/{month}/bank-advice.xlsx
+├── ecr-files/
+│   └── {orgId}/{year}/{month}/ecr.txt
+├── esi-returns/
+│   └── {orgId}/{year}/{month}/esi.txt
+└── employee-docs/
+    └── {orgId}/{employeeId}/{docType}.{ext}</code></pre>
+
+<h3>Build Process</h3>
+<ol>
+<li>Define Drizzle schema with all tables (including <code>org_id</code> on every table for multi-tenancy).</li>
+<li>Generate initial migration with <code>drizzle-kit generate</code>.</li>
+<li>Apply migration to D1 via <code>wrangler d1 migrations apply</code>.</li>
+<li>Seed development data (385 employees across 19 departments matching v1 screenshots).</li>
+<li>Set up R2 bucket with CORS policies for direct browser downloads.</li>
+<li>Write repository pattern functions: <code>getEmployee(orgId, id)</code>, <code>getSalaryRecords(orgId, month, year)</code> — every function requires <code>org_id</code>.</li>
+</ol>
+</div>
+
+<!-- LAYER 4 -->
+<div class="layer-card layer-4">
+<h2 id="layer-4"><span class="layer-badge badge-4">Layer 4</span> Auth & Permissions</h2>
+
+<h3>What We Build</h3>
+<p>The identity and access control system that ensures only authenticated users can access the app, organizations never see each other's data, and within an organization employees can't see the CEO's salary.</p>
+
+<h3>Technology: Cloudflare Access + Lucia Auth</h3>
+<p><strong>Cloudflare Access (Zero Trust)</strong> provides the outer authentication layer. Supports SSO (Google, Microsoft), OTP via email, and device posture checks. For PaySoft: "Only allow HR Manager to access the payout screen if on work device + phone OTP."</p>
+<p><strong>Lucia Auth</strong> handles session management designed for edge runtimes — session creation, validation, and revocation. Sessions stored in D1 (or KV for fast lookup). Cookie-based sessions (httpOnly, secure, SameSite).</p>
+
+<h3>RBAC Matrix</h3>
+<div class="mermaid" id="diag-rbac">
+graph TD
+    SA["Super Admin"] -->|"All orgs, all actions"| ALL["Full System Access"]
+    HR["HR Lead"] -->|"Own org, all employees"| HR_ACTS["Manage Employees\nRun Payroll\nApprove Declarations\nView Reports"]
+    PA["Payroll Accountant"] -->|"Own org, payroll only"| PA_ACTS["Run Payroll\nView Reports\nNo employee master edits"]
+    EMP["Employee"] -->|"Own record only"| EMP_ACTS["View Own Payslip\nUpload Declarations\nApply Leave\nUse Tax Simulator"]
+</div>
+
+<h3>Multi-Tenancy Strategy</h3>
+<ul>
+<li>Every table has an <code>org_id</code> column.</li>
+<li>Every query includes <code>WHERE org_id = ?</code> — enforced at the repository layer.</li>
+<li>JWT contains <code>org_id</code> claim extracted in middleware.</li>
+<li>D1 row-level security via application-enforced filters.</li>
+</ul>
+
+<h3>Build Process</h3>
+<ol>
+<li>Configure Cloudflare Access policies for the app domain.</li>
+<li>Set up Lucia Auth with D1 session storage.</li>
+<li>Implement login flow: Access validates identity → issues JWT → Lucia creates session → cookie set.</li>
+<li>Create RBAC middleware: <code>requireRole('hr_lead')</code> wraps sensitive endpoints.</li>
+<li>Implement org_id injection middleware.</li>
+<li>Audit every repository function to ensure org_id filtering.</li>
+</ol>
+</div>
+
+<!-- LAYER 5 -->
+<div class="layer-card layer-5">
+<h2 id="layer-5"><span class="layer-badge badge-5">Layer 5</span> Hosting & Deployment</h2>
+
+<h3>What We Build</h3>
+<p>The production hosting infrastructure that makes PaySoft accessible globally with zero downtime.</p>
+
+<h3>Technology: Cloudflare Pages + Workers</h3>
+<p><strong>Cloudflare Pages</strong> hosts the Astro frontend as static assets distributed to 300+ data centers. Every user loads the app from a PoP near them — a school in rural India loads from Mumbai or Bangalore PoP. Automatic HTTPS, custom domain support.</p>
+<p><strong>Cloudflare Workers</strong> hosts the Hono.js backend API. Same global distribution as Pages. No cold starts (V8 isolate model). Scales automatically from 0 to thousands of requests per second.</p>
+
+<h3>Deployment Architecture</h3>
+<div class="mermaid" id="diag-cicd">
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub
+    participant GA as GitHub Actions
+    participant CF_Pages as Cloudflare Pages
+    participant CF_Workers as Cloudflare Workers
+    participant D1 as Cloudflare D1
+
+    Dev->>GH: Push to feature branch
+    GH->>GA: Trigger workflow
+    GA->>GA: Run tests (tax math, payroll logic)
+    GA->>GA: Build Astro frontend
+    GA->>CF_Pages: Deploy preview (unique URL)
+    Dev->>CF_Pages: Inspect preview deployment
+    Dev->>GH: Open Pull Request
+    GH->>GA: Re-run checks on PR
+    Dev->>GH: Merge to main
+    GH->>GA: Trigger production deploy
+    GA->>CF_Pages: Deploy frontend to production
+    GA->>CF_Workers: Deploy backend (wrangler deploy)
+    GA->>D1: Run migrations (wrangler d1 apply)
+    CF_Pages-->>Dev: Live globally
+    CF_Workers-->>Dev: API live
+</div>
+
+<h3>Build Process</h3>
+<ol>
+<li>Initialize Cloudflare Pages project linked to GitHub repo.</li>
+<li>Configure Astro Cloudflare adapter (<code>@astrojs/cloudflare</code>).</li>
+<li>Set build command: <code>astro build</code>, output directory: <code>dist/</code>.</li>
+<li>Configure Wrangler for Workers deployment (<code>wrangler.toml</code> with D1, R2, KV, DO bindings).</li>
+<li>Set up preview deployments on feature branches.</li>
+<li>Configure production deployment on merge to <code>main</code>.</li>
+<li>Set up environment variables as Workers secrets.</li>
+<li>Configure custom domain and DNS.</li>
+</ol>
+</div>
+
+<!-- LAYER 6 -->
+<div class="layer-card layer-6">
+<h2 id="layer-6"><span class="layer-badge badge-6">Layer 6</span> Cloud & Compute</h2>
+
+<h3>What We Build</h3>
+<p>The serverless compute layer that runs all backend logic, handles concurrency, processes background jobs, and powers AI features.</p>
+
+<h3>Technology: Workers + Durable Objects + Queues + AI</h3>
+
+<h4>Cloudflare Workers</h4>
+<p>The primary compute runtime. Every API request runs on a Worker. V8 isolate model means starts in &lt;1ms with no cold starts. Memory: 128MB default. CPU: 30-second soft limit for HTTP requests, unlimited for Queue consumers.</p>
+
+<h4>Durable Objects</h4>
+<p>A coordination primitive that guarantees single-threaded execution. For PaySoft: <code>PayrollRunLock</code> — ensures exactly one payroll run per org per month. When the accountant clicks "Run Payroll," the DO acquires a lock. Any concurrent request waits or gets rejected.</p>
+
+<h4>Cloudflare Queues</h4>
+<p>Message queue for async processing. Use cases: bulk payslip generation (500 employees → 500 messages), notification dispatch (email + WhatsApp after payroll finalization), and document generation (Form 16, ECR files). At-least-once delivery with retry logic.</p>
+
+<h4>Workers AI + Vectorize</h4>
+<p>Powers the embedded HR/Tax chatbot. Workers AI runs LLM inference at the edge (Llama 2/3 models). Vectorize stores embeddings of tax rules, FAQs, and policy documents. Employee asks: "Why was my tax higher this month?" → Vectorize retrieves context → Workers AI generates answer.</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>Set up Worker bindings in <code>wrangler.toml</code> (D1, R2, KV, DO, Queue, AI).</li>
+<li>Implement Durable Object class for payroll locking.</li>
+<li>Implement Queue producers (enqueue jobs from API endpoints).</li>
+<li>Implement Queue consumers (process jobs: generate PDFs, send notifications).</li>
+<li>Set up Vectorize index with tax rules and FAQs.</li>
+<li>Implement chatbot endpoint: query Vectorize → pass context to Workers AI → stream response.</li>
+</ol>
+</div>
+
+<!-- LAYER 7 -->
+<div class="layer-card layer-7">
+<h2 id="layer-7"><span class="layer-badge badge-7">Layer 7</span> CI/CD & Version Control</h2>
+
+<h3>What We Build</h3>
+<p>The automated pipeline that takes code from a developer's laptop to production in minutes, with quality gates at every step.</p>
+
+<h3>Technology: GitHub + GitHub Actions + Wrangler</h3>
+<p><strong>GitHub:</strong> Repository (all code version-tracked), Issues & Projects (Kanban board), branch protection (main requires passing CI + code review), and Pull Requests (code review + preview deployment per PR).</p>
+<p><strong>GitHub Actions:</strong> Automated workflow triggered on push/PR. Jobs run in parallel where possible. Secrets management for deployment credentials.</p>
+
+<h3>CI/CD Pipeline</h3>
+<div class="mermaid">
+flowchart LR
+    A["git push"] --> B["Install deps"]
+    B --> C["Lint check"]
+    B --> D["Type check"]
+    C --> E["Unit tests\ntax math"]
+    D --> E
+    E --> F["Integration tests\npayroll flow"]
+    F --> G["Build frontend\nAstro"]
+    G --> H{"Is main branch?"}
+    H -->|"No"| I["Deploy preview\nto Pages"]
+    H -->|"Yes"| J["Deploy production\nPages + Workers"]
+    J --> K["Run D1 migrations"]
+    K --> L["Smoke test\nproduction endpoints"]
+    L --> M["Done — live globally"]
+</div>
+
+<h3>Workflow Structure</h3>
+<pre><code># .github/workflows/deploy.yml (conceptual)
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    - lint (eslint)
+    - typecheck (tsc --noEmit)
+    - unit tests (vitest: tax engine, audit engine)
+    - integration tests (vitest: payroll flow with test D1)
+
+  deploy-preview:
+    if: github.event_name == 'pull_request'
+    - build astro
+    - deploy to pages preview
+    - deploy workers preview
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    - build astro
+    - deploy to pages production
+    - wrangler deploy (workers)
+    - wrangler d1 migrations apply
+    - smoke test (curl health endpoints)</code></pre>
+
+<h3>Build Process</h3>
+<ol>
+<li>Create <code>.github/workflows/deploy.yml</code> with test → build → deploy stages.</li>
+<li>Set up branch protection rules on <code>main</code> (require PR, require passing CI).</li>
+<li>Configure GitHub Actions secrets: <code>CLOUDFLARE_API_TOKEN</code>, <code>CLOUDFLARE_ACCOUNT_ID</code>, <code>RESEND_API_KEY</code>, etc.</li>
+<li>Set up GitHub Projects board with columns: Backlog → In Progress → Review → Done.</li>
+<li>Create issue templates for features, bugs, and technical debt.</li>
+<li>Configure Wrangler GitHub Action for Workers deployment.</li>
+</ol>
+</div>
+
+<!-- LAYER 8 -->
+<div class="layer-card layer-8">
+<h2 id="layer-8"><span class="layer-badge badge-8">Layer 8</span> Security & Row Level Security</h2>
+
+<h3>What We Build</h3>
+<p>Defense in depth — multiple security layers protecting the application from external attacks and internal data leaks.</p>
+
+<h3>Security Architecture</h3>
+<div class="mermaid" id="diag-security">
+graph TB
+    Internet["Internet"] --> Turnstile["Turnstile\nBot Detection"]
+    Turnstile --> Access["Cloudflare Access\nSSO + OTP + Device Posture"]
+    Access --> WAF["Cloudflare WAF\nSQL Injection, XSS Protection"]
+    WAF --> Workers["Workers\nJWT Validation"]
+    Workers --> RBAC["RBAC Middleware\nRole Check"]
+    RBAC --> RLS["Row Level Security\norg_id on every query"]
+    RLS --> D1["D1 Database\nEncrypted at rest"]
+</div>
+
+<h3>Layer-by-Layer Security</h3>
+
+<h4>Turnstile (Bot Protection)</h4>
+<p>Invisible CAPTCHA replacement on login and signup forms. Uses machine learning to detect bots without user friction. Protects against credential stuffing and brute force.</p>
+
+<h4>Cloudflare Access (Identity)</h4>
+<p>Enforces authentication before the request reaches our infrastructure. Supports SSO (Google Workspace, Azure AD), OTP via email, hardware keys. Device posture: "Only allow access from company-managed devices." Short-lived tokens (configurable session duration).</p>
+
+<h4>WAF (Web Application Firewall)</h4>
+<p>Cloudflare's managed WAF rules block common attacks. SQL injection attempts blocked before reaching Workers. XSS payloads filtered. Rate-based rules for DDoS mitigation.</p>
+
+<h4>JWT Validation</h4>
+<p>Every API request must include a valid JWT. Tokens signed with HMAC-SHA256 (or RS256 for asymmetric). Short expiry (15 min access token, 7 day refresh token). Token revocation list in KV for logout.</p>
+
+<h4>RBAC Middleware</h4>
+<p>Endpoint-level permission checks. <code>POST /payroll/run</code> requires <code>hr_lead</code> or <code>payroll_accountant</code> role. <code>GET /employees/:id</code> for employees only returns their own record.</p>
+
+<h4>Row Level Security (RLS)</h4>
+<p>The most critical security layer for multi-tenancy. Every D1 query includes <code>WHERE org_id = ?</code>. Implemented at the repository layer — developers cannot accidentally write a query without org_id. Additional check: employee role can only query their own <code>employee_id</code>.</p>
+
+<h4>Data Encryption</h4>
+<p>D1 encrypts data at rest (Cloudflare managed). R2 encrypts objects at rest. All traffic HTTPS/TLS (Cloudflare managed certificates). PDFs password-protected (employee DOB as default).</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>Configure Turnstile widget in Astro login page.</li>
+<li>Set up Cloudflare Access policies for the app domain.</li>
+<li>Implement JWT validation middleware in Hono.js.</li>
+<li>Create RBAC middleware factory: <code>requireRole(...roles)</code>.</li>
+<li>Audit every repository function — verify org_id filtering.</li>
+<li>Add input validation (zod schemas) on all API endpoints.</li>
+<li>Configure WAF rules in Cloudflare dashboard.</li>
+<li>Set up security headers (CSP, HSTS, X-Frame-Options) via Workers middleware.</li>
+</ol>
+</div>
+
+<!-- LAYER 9 -->
+<div class="layer-card layer-9">
+<h2 id="layer-9"><span class="layer-badge badge-9">Layer 9</span> Rate-Limiting</h2>
+
+<h3>What We Build</h3>
+<p>Protection against abuse — ensuring no single user, bot, or organization can overwhelm the system or perform actions faster than intended.</p>
+
+<h3>Three Levels of Rate Control</h3>
+
+<h4>1. API Rate Limiting (Workers Level)</h4>
+<p>Hono.js rate limiter middleware using KV for distributed counting. Limits per IP and per user:
+<ul>
+<li>Login attempts: 5 per minute per IP.</li>
+<li>API requests: 100 per minute per user.</li>
+<li>Payroll run: 1 per minute per org (additional to DO lock).</li>
+</ul>
+Returns <code>429 Too Many Requests</code> with <code>Retry-After</code> header.</p>
+
+<h4>2. Business Logic Rate Limiting (Durable Object Level)</h4>
+<p>The <code>PayrollRunLock</code> DO ensures exactly one payroll run per org per month. Even if someone bypasses API limits, the DO serializes access. State machine prevents invalid transitions (can't run payroll on a frozen month).</p>
+
+<h4>3. Bot Protection (Turnstile Level)</h4>
+<p>Challenges suspicious requests before they reach the API. Configurable sensitivity (managed, non-interactive, invisible).</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>Implement KV-based rate limiter middleware in Hono.js.</li>
+<li>Configure per-route rate limits (stricter for auth, looser for reads).</li>
+<li>Implement Durable Object lock for payroll runs.</li>
+<li>Add Turnstile challenge on login/signup with appropriate sensitivity.</li>
+<li>Test rate limits with load testing.</li>
+</ol>
+</div>
+
+<!-- LAYER 10 -->
+<div class="layer-card layer-10">
+<h2 id="layer-10"><span class="layer-badge badge-10">Layer 10</span> Caching & CDN</h2>
+
+<h3>What We Build</h3>
+<p>A multi-tier caching strategy that minimizes database queries, reduces latency, and ensures the app feels instant for users worldwide.</p>
+
+<h3>Caching Architecture</h3>
+<div class="mermaid" id="diag-cache">
+graph LR
+    User["User Browser"] -->|"HTTPS Request"| CDN["Cloudflare CDN\n300+ PoPs"]
+    CDN -->|"Cache HIT"| Response["Static Asset\nHTML, CSS, JS, Images"]
+    CDN -->|"Cache MISS"| Workers["Workers"]
+    Workers -->|"KV HIT"| KV["Cloudflare KV\nTax Slabs, PTax Rules\nSession Tokens"]
+    Workers -->|"KV MISS"| D1["D1 Database"]
+    D1 -->|"Store result"| KV
+    KV --> Workers
+    Workers --> CDN
+    CDN --> Response
+</div>
+
+<h3>Caching Tiers</h3>
+
+<h4>Tier 1: Browser Cache (Cache-Control Headers)</h4>
+<ul>
+<li>Static assets (CSS, JS, fonts): <code>max-age=31536000, immutable</code> (1 year, fingerprinted filenames).</li>
+<li>API responses: <code>private, max-age=60</code> for user-specific data (payslips).</li>
+<li>No caching for payroll run endpoints.</li>
+</ul>
+
+<h4>Tier 2: CDN Edge Cache (Cloudflare Pages)</h4>
+<p>All static assets cached at 300+ PoPs. HTML pages cached with short TTL (or bypassed for authenticated content). Cache keys include query string for report downloads.</p>
+
+<h4>Tier 3: Application Cache (Cloudflare KV)</h4>
+<ul>
+<li><strong>Tax slabs:</strong> Cached for 24 hours. Updated only when Union Budget changes.</li>
+<li><strong>PTax state rules:</strong> Cached for 7 days. Rarely changes.</li>
+<li><strong>PF/ESI config:</strong> Cached for 7 days. Wage ceilings updated annually.</li>
+<li><strong>Session tokens:</strong> Cached for session duration. Enables instant auth validation without D1 hit.</li>
+<li><strong>Audit results:</strong> Cached for 5 minutes. Prevents re-running expensive audit queries.</li>
+</ul>
+
+<h4>Tier 4: Database Query Cache (D1)</h4>
+<p>SQLite's internal query cache (per-connection). Drizzle prepared statements for repeated queries.</p>
+
+<h3>Cache Invalidation Strategy</h3>
+<ul>
+<li>KV entries have explicit TTLs.</li>
+<li>Admin action "Clear Cache" triggers KV purge for specific keys.</li>
+<li>Tax slab updates: write new value to KV immediately (write-through).</li>
+<li>Payroll freeze: invalidate audit cache for that org.</li>
+</ul>
+
+<h3>Build Process</h3>
+<ol>
+<li>Configure <code>Cache-Control</code> headers in Astro.</li>
+<li>Set up KV namespace for caching.</li>
+<li>Implement cache helper functions: <code>getCached(key, ttl, fetchFn)</code>.</li>
+<li>Add cache-aside pattern in Engine 3 (tax slabs) and Engine 2 (audit results).</li>
+<li>Configure Pages caching rules in Cloudflare dashboard.</li>
+<li>Implement admin cache purge endpoint.</li>
+</ol>
+</div>
+
+<!-- LAYER 11 -->
+<div class="layer-card layer-11">
+<h2 id="layer-11"><span class="layer-badge badge-11">Layer 11</span> Load Balancing & Scaling</h2>
+
+<h3>What We Build</h3>
+<p>The ability to handle growth — from 1 organization with 10 employees to 500 organizations with 100,000+ employees — without architectural changes.</p>
+
+<h3>Scaling Architecture</h3>
+<div class="mermaid" id="diag-scaling">
+graph TB
+    Users["Users Worldwide"] --> DNS["Cloudflare DNS\nAnycast IP"]
+    DNS --> LB["Global Load Balancer\nAnycast Routing"]
+    LB -->|"Nearest PoP"| POP1["Mumbai PoP"]
+    LB -->|"Nearest PoP"| POP2["Singapore PoP"]
+    LB -->|"Nearest PoP"| POP3["London PoP"]
+    LB -->|"Nearest PoP"| POP4["San Francisco PoP"]
+    
+    POP1 --> W1["Workers\nAuto-scale 0 to N"]
+    POP1 --> P1["Pages CDN\nStatic Assets"]
+    W1 --> D1["D1\nRead Replicas"]
+    W1 --> R2["R2\nObject Storage"]
+    W1 --> DO["Durable Objects\nGlobal Consistency"]
+</div>
+
+<h3>How Each Component Scales</h3>
+
+<h4>Cloudflare Pages (Frontend)</h4>
+<p>No scaling concerns. Static assets on Cloudflare's global network. 300+ PoPs serve assets. No origin to overload. Handles traffic spikes (e.g., everyone checking payslips on salary day) automatically.</p>
+
+<h4>Cloudflare Workers (Backend)</h4>
+<p>Scales from 0 to millions of requests per second. Each request runs in its own V8 isolate. No connection pooling needed (D1 handles this). Soft limit: 1000 Worker invocations per request (fan-out for bulk operations).</p>
+
+<h4>Cloudflare D1 (Database)</h4>
+<p>Read scaling: D1 runs at the edge. Reads are fast (local SQLite). Write scaling: Single primary writer per database. For PaySoft, writes are infrequent (monthly payroll runs). For extreme scale: shard by org_id across multiple D1 databases.</p>
+
+<h4>Cloudflare R2 (Storage)</h4>
+<p>Auto-scales to exabytes. No egress fees (unlike S3). Employees downloading payslips costs nothing in bandwidth. S3-compatible API for tooling compatibility.</p>
+
+<h4>Durable Objects (Concurrency)</h4>
+<p>DOs are singular per ID. <code>PayrollRunLock</code> for org X is always the same DO. Global consistency: DOs migrate to the region where they're accessed. No contention: DOs handle one request at a time per ID (by design).</p>
+
+<h4>Cloudflare Queues (Async Processing)</h4>
+<p>Scales with number of consumers. Bulk payslip generation: add 500 messages, Workers process in parallel. Back-pressure: if consumers fall behind, queue grows (up to millions of messages).</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>No special scaling configuration needed — Cloudflare handles it by default.</li>
+<li>Monitor Workers CPU time and memory usage via Cloudflare dashboard.</li>
+<li>Set up alerts for D1 write latency (indicates need for sharding).</li>
+<li>Configure Queue consumer concurrency for bulk operations.</li>
+<li>Load test with simulated payroll runs (1000 employees, concurrent orgs).</li>
+</ol>
+</div>
+
+<!-- LAYER 12 -->
+<div class="layer-card layer-12">
+<h2 id="layer-12"><span class="layer-badge badge-12">Layer 12</span> Error Tracking & Logs</h2>
+
+<h3>What We Build</h3>
+<p>Visibility into what's happening in production — catching errors before users report them, and having the data to fix issues fast.</p>
+
+<h3>Logging Architecture</h3>
+
+<h4>Cloudflare Workers Logs</h4>
+<p><code>console.log</code> / <code>console.error</code> in Workers streams to Cloudflare Logs. Structured logging: JSON objects with <code>orgId</code>, <code>userId</code>, <code>endpoint</code>, <code>error</code>, <code>timestamp</code>. <code>wrangler tail</code> for real-time log streaming during development.</p>
+
+<h4>Logpush (External SIEM)</h4>
+<p>Push logs to external systems: Datadog, Splunk, or S3-compatible storage. Useful for long-term retention and compliance auditing.</p>
+
+<h4>GitHub Actions Test Failures</h4>
+<p>Every push triggers test suite. Failures block PR merge. Test output visible in GitHub UI. Slack/email notifications on failure.</p>
+
+<h4>Smart Audit Engine (Pre-Flight Error Detection)</h4>
+<p>Engine 2 acts as a proactive error detector. Before payroll runs, it flags: missing PAN, missing bank details, unfrozen prior months. Prevents errors rather than logging them after the fact.</p>
+
+<h4>Audit Logs Table (D1)</h4>
+<p>Every significant action logged: payroll run, declaration approval, employee creation. Immutable append-only table. Queryable for compliance: "Show all payroll runs for Org X in FY 2025-26."</p>
+
+<h3>Build Process</h3>
+<ol>
+<li>Implement structured logging utility: <code>log.info('payroll.run.started', { orgId, month })</code>.</li>
+<li>Add error boundary middleware in Hono.js (catch unhandled exceptions, return 500 with trace ID).</li>
+<li>Set up Logpush job to external storage (optional).</li>
+<li>Implement audit log writes in Engine 4 (payroll) and Engine 5 (declarations).</li>
+<li>Create audit log viewer in the admin dashboard.</li>
+<li>Set up <code>wrangler tail</code> workflow for debugging.</li>
+</ol>
+</div>
+
+<!-- LAYER 13 -->
+<div class="layer-card layer-13">
+<h2 id="layer-13"><span class="layer-badge badge-13">Layer 13</span> Availability & Recovery</h2>
+
+<h3>What We Build</h3>
+<p>Resilience — the system stays up during failures, and when things go wrong, recovery is fast and data is safe.</p>
+
+<h3>Availability Strategy</h4>
+
+<h4>Zero-Downtime Deployments</h4>
+<p>Workers deploy globally in seconds. New version starts receiving traffic only when all PoPs are ready. No maintenance windows. Rollback: <code>wrangler deploy --rollback</code> or redeploy previous version instantly.</p>
+
+<h4>GitHub Version Control (Instant Rollback)</h4>
+<p>Every line of code is versioned. If a tax formula bug ships, revert to the previous commit. <code>git revert</code> → auto-deploy → fixed in production within minutes.</p>
+
+<h4>Payroll Freeze (Immutability)</h4>
+<p>Once a month is frozen, salary records are immutable. Even if a bug is discovered later, historical payroll data is preserved. Corrections happen via adjustment entries in the current month.</p>
+
+<h4>Durable Object Persistence</h4>
+<p>DO state survives restarts and migrations. Payroll run progress is persisted — if a Worker crashes mid-run, the DO state is intact.</p>
+
+<h4>Cloudflare Global Network (No Single Point of Failure)</h4>
+<p>300+ PoPs. If Mumbai goes down, traffic routes to Chennai or Singapore. No data center dependency.</p>
+
+<h4>D1 Point-in-Time Recovery</h4>
+<p>Cloudflare maintains 30-day backup window. Accidental <code>DELETE</code>? Restore to any point in the last 30 days. For longer retention: periodic exports to R2.</p>
+
+<h3>Disaster Recovery Plan</h3>
+<div class="mermaid" id="diag-disaster">
+flowchart TD
+    Problem["Something Breaks"] --> Identify["Identify via\nLogs + Audit Engine"]
+    Identify --> Assess{"Severity?"}
+    Assess -->|"Code bug"| Revert["git revert\nauto-deploys fix"]
+    Assess -->|"Data corruption"| Restore["D1 point-in-time\nrecovery"]
+    Assess -->|"Cloudflare outage"| Wait["Wait for CF recovery\nmulti-PoP redundancy"]
+    Revert --> Verify["Smoke test\nproduction"]
+    Restore --> Verify
+    Verify --> Resolved["Issue resolved\npost-mortem logged"]
+</div>
+
+<h3>Build Process</h3>
+<ol>
+<li>Configure branch protection to require CI pass before merge.</li>
+<li>Set up D1 automated backups (verify Cloudflare's 30-day PITR is active).</li>
+<li>Implement payroll freeze logic in Engine 4 (immutable records).</li>
+<li>Test rollback procedure: deploy bad version → revert → verify fix.</li>
+<li>Document runbook for common failure scenarios.</li>
+<li>Set up uptime monitoring (Cloudflare Health Checks or UptimeRobot).</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- HOW THEY WORK TOGETHER -->
+<h2 id="together">How the Layers Work Together: A Payroll Run Example</h2>
+
+<p>To tie all 13 layers together, here's what happens when an HR manager runs payroll for March 2026:</p>
+
+<div class="mermaid">
+sequenceDiagram
+    participant FE as Frontend (Astro)
+    participant Auth as Layer 4: Auth
+    participant API as Layer 2: Backend (Workers)
+    participant RL as Layer 9: Rate Limit
+    participant DO as Layer 6: Durable Object
+    participant Tax as Layer 2: Engine 3 (Tax)
+    participant Cache as Layer 10: KV Cache
+    participant DB as Layer 3: D1
+    participant Doc as Layer 2: Engine 6 (Docs)
+    participant R2 as Layer 3: R2
+    participant Notif as Layer 2: Engine 7 (Notif)
+    participant Log as Layer 12: Logs
+
+    FE->>Auth: Login (Layer 4: Access + Lucia)
+    Auth-->>FE: JWT + Session Cookie
+    FE->>API: POST /payroll/run (March 2026)
+    API->>RL: Check rate limit (Layer 9)
+    RL-->>API: OK
+    API->>DO: Acquire lock (Layer 6)
+    DO-->>API: Lock acquired
+    API->>DB: Fetch employees (Layer 3 + 8: RLS)
+    DB-->>API: 107 employees
+    loop For each employee
+        API->>Cache: Get tax slabs (Layer 10)
+        Cache-->>API: Cached slabs
+        API->>Tax: Calculate deductions (Layer 2)
+        Tax-->>API: Deduction breakdown
+    end
+    API->>DB: Write salary records (Layer 3)
+    API->>DO: Freeze month + release lock
+    API->>Doc: Generate payslips (Layer 2 + 6: Queue)
+    Doc->>R2: Store PDFs (Layer 3)
+    API->>Notif: Dispatch notifications (Layer 2 + 6: Queue)
+    API->>Log: Structured log (Layer 12)
+    API-->>FE: Payroll complete
+    FE-->>HR: Success + download links
+</div>
+
+<hr>
+
+<!-- SUMMARY TABLE -->
+<h2 id="summary">Summary: Layer-to-Technology Mapping</h2>
+
+<table>
+<thead>
+<tr><th>Layer</th><th>Primary Technology</th><th>Cloudflare Product</th></tr>
+</thead>
+<tbody>
+<tr><td>1. Frontend</td><td>Astro + Tailwind + Shadcn UI</td><td>Pages (hosting)</td></tr>
+<tr><td>2. Backend Logic & APIs</td><td>Hono.js</td><td>Workers (compute)</td></tr>
+<tr><td>3. Database & Storage</td><td>D1 + Drizzle ORM + R2</td><td>D1, R2</td></tr>
+<tr><td>4. Auth & Permissions</td><td>Cloudflare Access + Lucia Auth</td><td>Zero Trust / Access</td></tr>
+<tr><td>5. Hosting & Deployment</td><td>Pages + Workers + Wrangler</td><td>Pages, Workers</td></tr>
+<tr><td>6. Cloud & Compute</td><td>Workers + DO + Queues + AI</td><td>Workers, DO, Queues, AI</td></tr>
+<tr><td>7. CI/CD & Version Control</td><td>GitHub Actions + Wrangler</td><td>— (external)</td></tr>
+<tr><td>8. Security & RLS</td><td>Turnstile + WAF + RLS queries</td><td>Turnstile, WAF, D1</td></tr>
+<tr><td>9. Rate-Limiting</td><td>Workers middleware + DO lock</td><td>Workers, DO</td></tr>
+<tr><td>10. Caching & CDN</td><td>KV + Pages CDN</td><td>KV, Pages</td></tr>
+<tr><td>11. Load Balancing & Scaling</td><td>Cloudflare auto-scale</td><td>Global Network</td></tr>
+<tr><td>12. Error Tracking & Logs</td><td>Workers Logs + Audit Engine</td><td>Workers, D1</td></tr>
+<tr><td>13. Availability & Recovery</td><td>Git rollback + PITR + Zero-downtime</td><td>GitHub, D1, Workers</td></tr>
+</tbody>
+</table>
+
+<br>
+
+<blockquote>
+<strong>Next step:</strong> With this 13-layer map complete, the build can proceed layer by layer. Start with Layer 3 (Database schema) and Layer 4 (Auth) as foundations, then build Layer 2 (Backend engines), then Layer 1 (Frontend), and finally layers 5-13 as deployment and operational concerns.
+</blockquote>
+
+</main>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#1f6feb',
+    primaryTextColor: '#e6edf3',
+    primaryBorderColor: '#30363d',
+    lineColor: '#8b949e',
+    secondaryColor: '#21262d',
+    tertiaryColor: '#0d1117',
+    fontSize: '14px'
+  },
+  flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+  sequence: { useMaxWidth: true, mirrorActors: false },
+  er: { useMaxWidth: true }
+});
+</script>
+
+<script>
+(function() {
+  var nav = document.getElementById('mainNav');
+  var toggle = document.getElementById('navToggle');
+  var main = document.querySelector('main');
+  
+  function toggleNav() {
+    nav.classList.toggle('collapsed');
+    main.classList.toggle('expanded');
+    if (nav.classList.contains('collapsed')) {
+      toggle.innerHTML = '&#9776;';
+    } else {
+      toggle.innerHTML = '&#10005;';
+    }
+  }
+  
+  toggle.addEventListener('click', toggleNav);
+  
+  // Collapse by default on smaller screens
+  if (window.innerWidth <= 1000) {
+    nav.classList.add('collapsed');
+    main.classList.add('expanded');
+  }
+  
+  // Keyboard shortcut: press 'n' to toggle
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'n' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      toggleNav();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

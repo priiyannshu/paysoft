@@ -1,0 +1,31 @@
+{
+  "name": "paysoft",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "build:pwa": "echo 'placeholder — Astro build lands in Phase 4'",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint app/",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "wrangler d1 migrations apply paysoft --local",
+    "db:migrate:remote": "wrangler d1 migrations apply paysoft --remote"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.20240101.0",
+    "drizzle-orm": "^0.36.0",
+    "drizzle-kit": "^0.28.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
