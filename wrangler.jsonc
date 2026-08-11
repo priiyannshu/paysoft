@@ -14,13 +14,8 @@
 		{
 			"binding": "DB",
 			"database_name": "paysoft",
-			"database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+			"database_id": "033e9f6e-7aef-4c8c-bd12-d8498e536935",
 			"migrations_dir": "app/pipeline/migrations"
-		},
-		{
-			"binding": "paysoft",
-			"database_name": "paysoft",
-			"database_id": "033e9f6e-7aef-4c8c-bd12-d8498e536935"
 		}
 	]
 }
