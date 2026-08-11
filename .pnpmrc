@@ -1,0 +1,10 @@
+only-built-packages=esbuild,workerd
+auto-install-peers=true
+strict-peer-dependencies=false
+enable-pre-post-scripts=true
+reporter=append-only
+node-linker=hoisted
+shamefully-hoist=true
+npm-run-recursive=false
+shell-emulator=true
+ignore-scripts=true
