@@ -139,7 +139,7 @@ payroll.get('/status/:runId', async (c) => {
     year: run.year,
     status: run.status,
     employeeCount: parsed.length,
-    totalNetPay: parsed.reduce((sum: number, r: { netPay: number }) => sum + r.netPay, 0),
+    totalNetPay: parsed.reduce((sum: number, r: any) => sum + Number(r.netPay || 0), 0),
     records: parsed,
   })
 })
