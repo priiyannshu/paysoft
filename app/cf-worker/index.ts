@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { tax } from './lib/tax/routes'
 import { payroll } from './lib/payroll/routes'
+import { ess } from './lib/ess/routes'
 import { PayrollRunLock } from './lib/payroll/durable-object'
 
 interface Env {
@@ -17,6 +18,7 @@ app.get('/api/health', (c) => {
 
 app.route('/api/tax', tax)
 app.route('/api/payroll', payroll)
+app.route('/api/ess', ess)
 
 export default app
 
