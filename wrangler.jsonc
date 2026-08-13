@@ -7,7 +7,7 @@
 		"nodejs_compat"
 	],
 	"assets": {
-		"directory": "./app/pwa",
+		"directory": "./app/pwa/dist",
 		"binding": "ASSETS"
 	},
 	"d1_databases": [

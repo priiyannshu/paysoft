@@ -7,6 +7,7 @@ import { ess } from './lib/ess/routes'
 import { audit } from './lib/audit/routes'
 import { docs } from './lib/docs/routes'
 import { notify } from './engines/7-notify/routes'
+import { apiRoutes } from './engines/api/routes'
 import { handleQueueMessage } from './engines/7-notify/queue'
 import { PayrollRunLock } from './lib/payroll/durable-object'
 
@@ -34,6 +35,7 @@ app.route('/api/ess', ess)
 app.route('/api/audit', audit)
 app.route('/api/docs', docs)
 app.route('/api/notify', notify)
+app.route('/api', apiRoutes)
 app.route('/docs', docs)
 
 export default {

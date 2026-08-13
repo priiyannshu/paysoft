@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --dry-run",
-    "build:pwa": "echo 'placeholder — Astro build lands in Phase 4'",
+    "build:pwa": "astro build --root app/pwa",
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,12 +17,20 @@
     "db:migrate:remote": "wrangler d1 migrations apply paysoft --remote"
   },
   "dependencies": {
+    "@astrojs/react": "^6.0.2",
+    "@astrojs/tailwind": "^6.0.2",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@react-pdf/renderer": "^4.6.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react-dom": "^19.2.4",
+    "astro": "^7.2.1",
     "hono": "^4.0.0",
     "lucia": "^3.2.2",
+    "lucide-react": "^1.31.0",
     "oslo": "^1.2.1",
     "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },

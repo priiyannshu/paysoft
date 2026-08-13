@@ -226,18 +226,95 @@ def generate_leave_records():
         )
     return "\n".join(lines)
 
+def generate_users():
+    lines = ["", "-- Users for Demo Org (password: Password123!)"]
+    # PBKDF2 hash for 'Password123!'
+    pw_hash = "pbkdf2$100000$11223344556677889900aabbccddeeff$f7439eda3b98229093e2d85d50c16cd4282ed509b0fac123bc482d1222bc12c1"
+    user_data = [
+        ("usr_admin", "admin@demo.paysoft", "super_admin", "PSR Admin / Super Admin"),
+        ("usr_hr", "hr@demo.paysoft", "hr_lead", "Priya Sharma (HR Lead)"),
+        ("usr_acct", "accountant@demo.paysoft", "payroll_accountant", "Ramesh Verma (Accountant)"),
+        ("usr_emp", "sakshi.nair@example.com", "employee", "Sakshi Nair (Employee)"),
+    ]
+    for uid_val, email, role, name in user_data:
+        lines.append(
+            f"INSERT INTO users (id, org_id, email, password_hash, role, name, status, created_at, updated_at) "
+            f"VALUES ('{uid_val}', '{ORG_ID}', '{email}', '{pw_hash}', '{role}', '{name}', 'active', unixepoch(), unixepoch());"
+        )
+    return "\n".join(lines)
+
+def generate_payroll_runs():
+    lines = ["", "-- Historical Payroll Runs & Salary Records (FY 2025-26)"]
+    months = [
+        (4, 2025, "frozen"), (5, 2025, "frozen"), (6, 2025, "frozen"),
+        (7, 2025, "frozen"), (8, 2025, "frozen"), (9, 2025, "frozen"),
+        (10, 2025, "frozen"), (11, 2025, "frozen"), (12, 2025, "frozen"),
+        (1, 2026, "frozen"), (2, 2026, "frozen"), (3, 2026, "computed"),
+    ]
+    
+    # We will generate salary records for the first 100 employees for each month
+    emp_ids = [uid("emp", f"{i:04d}") for i in range(1, 108)]
+    
+    for m, y, status in months:
+        run_id = f"PR-{ORG_CODE}-{y}-{m:02d}"
+        lines.append(
+            f"INSERT INTO payroll_runs (id, org_id, month, year, status, created_at, updated_at) "
+            f"VALUES ('{run_id}', '{ORG_ID}', {m}, {y}, '{status}', '{y}-{m:02d}-28T00:00:00Z', '{y}-{m:02d}-28T00:00:00Z');"
+        )
+        
+        # Insert sample salary records
+        for i, emp_id in enumerate(emp_ids):
+            base_basic = 15000 + ((i * 7) % 65000)
+            da = round(base_basic * 0.75) if (i % 2 == 0) else round(base_basic * 0.08)
+            hra = round(base_basic * 0.30)
+            gross = base_basic + da + hra
+            pf_emp = 1800 if gross > 15000 else round(gross * 0.12)
+            esi_emp = round(gross * 0.0075) if gross <= 21000 else 0
+            ptax = 200
+            tds = 2500 if gross > 50000 else 0
+            tot_ded = pf_emp + esi_emp + ptax + tds
+            net = gross - tot_ded
+            ded_json = json.dumps({
+                "epf": {"employee": pf_emp, "employer": 550, "eps": 1250},
+                "esi": {"employee": esi_emp, "employer": round(gross * 0.0325) if gross <= 21000 else 0},
+                "incomeTax": {"monthly": tds, "regime": "new"},
+                "professionalTax": ptax
+            })
+            
+            srid = f"sr_{y}_{m:02d}_{emp_id}"
+            lines.append(
+                f"INSERT INTO salary_records (id, org_id, employee_id, month, year, status, basic_pay, da, hra, gross_earnings, tds, pf_employee, pf_employer, pf_eps, esi_employee, esi_employer, professional_tax, total_deductions, net_pay, run_id, created_at, updated_at) "
+                f"VALUES ('{srid}', '{ORG_ID}', '{emp_id}', {m}, {y}, '{status}', {base_basic}, {da}, {hra}, {gross}, {tds}, {pf_emp}, 550, 1250, {esi_emp}, {round(gross * 0.0325) if gross <= 21000 else 0}, {ptax}, {tot_ded}, {net}, '{run_id}', unixepoch(), unixepoch());"
+            )
+            
+    return "\n".join(lines)
+
 # --- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
     parts = [
+        "DELETE FROM salary_records;",
+        "DELETE FROM payroll_runs;",
+        "DELETE FROM users;",
+        "DELETE FROM sessions;",
+        "DELETE FROM declarations;",
+        "DELETE FROM leave_records;",
+        "DELETE FROM employees;",
+        "DELETE FROM departments;",
+        "DELETE FROM configurations;",
+        "DELETE FROM audit_logs;",
+        "DELETE FROM organizations;",
         generate_organization(),
         generate_departments(),
         generate_employees(),
         generate_configurations(),
         generate_declarations(),
         generate_leave_records(),
+        generate_users(),
+        generate_payroll_runs(),
     ]
     out = "\n".join(parts) + "\n"
     out_file = ROOT / "app/data/processed/seed.sql"
     out_file.write_text(out)
     print(f"Generated {out_file} ({len(out)} bytes)")
+
