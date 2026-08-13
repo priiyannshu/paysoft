@@ -53,12 +53,41 @@ payroll.post('/run', async (c) => {
       headers: { 'Content-Type': 'application/json' },
     }))
 
+    // Write audit log for run start
+    let now = new Date().toISOString()
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (event_type, payload, recipient, created_at) VALUES (?, ?, ?, ?)`
+    ).bind('PAYROLL_RUN_STARTED', JSON.stringify({ runId }), 'SYSTEM', now).run()
+
+    // Fetch approved tax declarations for employees
+    const employeeIds = input.employees.map(e => e.employeeId)
+    const placeholders = employeeIds.map(() => '?').join(',')
+    
+    // Fallback if employeeIds is empty
+    let declarationsMap: Record<string, any> = {}
+    if (employeeIds.length > 0) {
+      const { results: decs } = await c.env.DB.prepare(
+        `SELECT employee_id, declarations_json FROM tax_declarations WHERE status = 'approved' AND employee_id IN (${placeholders})`
+      ).bind(...employeeIds).all()
+
+      for (const dec of decs) {
+        declarationsMap[dec.employee_id as string] = JSON.parse(dec.declarations_json as string)
+      }
+    }
+
+    // Attach declarations to input
+    for (const emp of input.employees) {
+      if (declarationsMap[emp.employeeId]) {
+        emp.declarations = declarationsMap[emp.employeeId]
+      }
+    }
+
     // Step 3: Compute payroll
     const result = executePayrollRun(input)
     result.runId = runId
 
     // Step 4: Write to D1
-    const now = new Date().toISOString()
+    now = new Date().toISOString()
 
     await c.env.DB.prepare(
       `INSERT INTO payroll_runs (id, org_id, month, year, status, created_at, updated_at)
@@ -89,6 +118,11 @@ payroll.post('/run', async (c) => {
       body: JSON.stringify({ nextStatus: 'computed' }),
       headers: { 'Content-Type': 'application/json' },
     }))
+
+    // Write audit log for run completion
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (event_type, payload, recipient, created_at) VALUES (?, ?, ?, ?)`
+    ).bind('PAYROLL_RUN_COMPLETED', JSON.stringify({ runId }), 'SYSTEM', new Date().toISOString()).run()
 
     return c.json(result, 201)
 
@@ -189,6 +223,11 @@ payroll.post('/freeze/:monthId', async (c) => {
   await c.env.DB.prepare(
     `UPDATE payroll_runs SET status = 'frozen', updated_at = ? WHERE id = ?`
   ).bind(new Date().toISOString(), run.id as string).run()
+
+  // Write audit log for freeze
+  await c.env.DB.prepare(
+    `INSERT INTO audit_logs (event_type, payload, recipient, created_at) VALUES (?, ?, ?, ?)`
+  ).bind('PAYROLL_RUN_FROZEN', JSON.stringify({ runId: run.id }), 'SYSTEM', new Date().toISOString()).run()
 
   // Release the lock — month is permanently frozen in D1
   await lockStub.fetch(new Request('https://lock/release', { method: 'POST' }))

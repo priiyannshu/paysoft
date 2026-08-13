@@ -48,7 +48,7 @@ export function computeEmployeeSalary(emp: EmployeeAttendance): EmployeeSalaryRe
       specialAllowance: emp.specialAllowance * 12,
       otherAllowances: emp.otherAllowances * 12,
     },
-    declarations: {
+    declarations: emp.declarations || {
       section80C: 0,
       section80D: 0,
       section24b: 0,

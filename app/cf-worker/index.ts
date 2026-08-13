@@ -39,4 +39,4 @@ export default {
 }
 
 export { PayrollRunLock }
-
+export type AppType = typeof app

@@ -30,6 +30,7 @@ export interface EmployeeAttendance {
   isMetro: boolean             // Metro city for HRA (50% vs 40%)
   regime: 'old' | 'new'        // Tax regime
   state: string                // State code for PTax
+  declarations?: import('../tax/types').TaxDeclarations
 }
 
 /** Payroll run request */

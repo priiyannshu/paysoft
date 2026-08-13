@@ -93,4 +93,48 @@ export class ESSEngine {
       updatedAt: now
     }
   }
+
+  async approveDeclaration(id: string): Promise<{ success: boolean }> {
+    const now = new Date().toISOString()
+    const { success } = await this.db.prepare(`
+      UPDATE tax_declarations SET status = 'approved', updated_at = ? WHERE id = ?
+    `).bind(now, id).run()
+
+    if (success) {
+      // Write audit log
+      await this.db.prepare(`
+        INSERT INTO audit_logs (event_type, payload, recipient, created_at)
+        VALUES (?, ?, ?, ?)
+      `).bind(
+        'DECLARATION_APPROVED',
+        JSON.stringify({ declarationId: id }),
+        'SYSTEM',
+        now
+      ).run()
+    }
+    
+    return { success }
+  }
+
+  async rejectDeclaration(id: string): Promise<{ success: boolean }> {
+    const now = new Date().toISOString()
+    const { success } = await this.db.prepare(`
+      UPDATE tax_declarations SET status = 'rejected', updated_at = ? WHERE id = ?
+    `).bind(now, id).run()
+
+    if (success) {
+      // Write audit log
+      await this.db.prepare(`
+        INSERT INTO audit_logs (event_type, payload, recipient, created_at)
+        VALUES (?, ?, ?, ?)
+      `).bind(
+        'DECLARATION_REJECTED',
+        JSON.stringify({ declarationId: id }),
+        'SYSTEM',
+        now
+      ).run()
+    }
+    
+    return { success }
+  }
 }

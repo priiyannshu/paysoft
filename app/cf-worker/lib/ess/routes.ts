@@ -51,3 +51,17 @@ ess.post('/simulate-regime', async (c) => {
   const result = simulateRegimes(input)
   return c.json(result)
 })
+
+ess.post('/declaration/:id/approve', async (c) => {
+  const id = c.req.param('id')
+  const engine = new ESSEngine(c.env.DB)
+  const result = await engine.approveDeclaration(id)
+  return c.json(result)
+})
+
+ess.post('/declaration/:id/reject', async (c) => {
+  const id = c.req.param('id')
+  const engine = new ESSEngine(c.env.DB)
+  const result = await engine.rejectDeclaration(id)
+  return c.json(result)
+})
