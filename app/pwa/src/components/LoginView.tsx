@@ -5,8 +5,6 @@ import {
   Mail,
   ShieldCheck,
   ArrowRight,
-  Sparkles,
-  CheckCircle2,
   AlertCircle
 } from 'lucide-react';
 
@@ -16,6 +14,19 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('Password123!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const getPersonaRole = (emailAddr: string): { role: string; name: string; code: string } => {
+    if (emailAddr.includes('hr')) {
+      return { role: 'hr_lead', name: 'Priya Sharma (HR Lead)', code: 'HR' };
+    }
+    if (emailAddr.includes('accountant')) {
+      return { role: 'payroll_accountant', name: 'Ramesh Verma (Accountant)', code: 'ACCT' };
+    }
+    if (emailAddr.includes('sakshi') || emailAddr.includes('employee')) {
+      return { role: 'employee', name: 'Sakshi Nair (Employee)', code: 'EMP' };
+    }
+    return { role: 'super_admin', name: 'PSR Computers', code: 'PSR' };
+  };
 
   const handleLogin = async (e?: React.FormEvent, customCredentials?: any) => {
     if (e) e.preventDefault();
@@ -28,16 +39,42 @@ export const LoginView: React.FC = () => {
       password,
     };
 
+    const targetPersona = getPersonaRole(payload.email);
+
     try {
       const res = await fetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': targetPersona.role,
+          'X-User-Email': payload.email,
+        },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok) {
-        window.location.href = '/dashboard';
+        const userObj = {
+          id: data.user?.id || 'usr_demo',
+          email: data.user?.email || payload.email,
+          name: data.user?.name || targetPersona.name,
+          role: data.user?.role || targetPersona.role,
+          code: targetPersona.code,
+          orgId: data.user?.orgId || 'org_demo_001',
+        };
+
+        // Store user in localStorage after successful login
+        localStorage.setItem('paysoft_user', JSON.stringify(userObj));
+
+        // Dispatch event so any listening React components sync state
+        window.dispatchEvent(new CustomEvent('paysoft_role_changed', { detail: userObj }));
+
+        // Role-based redirect
+        if (userObj.role === 'employee') {
+          window.location.href = '/ess';
+        } else {
+          window.location.href = '/dashboard';
+        }
       } else {
         setError(data.error || 'Invalid credentials or organization code');
       }
@@ -66,7 +103,7 @@ export const LoginView: React.FC = () => {
           PS
         </div>
         <h2 className="text-2xl font-extrabold text-white tracking-tight">
-          PaySoft v2 Enterprise Portal
+          PaySoft v3 Enterprise Portal
         </h2>
         <p className="text-xs text-slate-400">
           Enterprise Indian Organization Payroll & Human Resources Management
@@ -136,7 +173,7 @@ export const LoginView: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-lg shadow-sm text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 focus:outline-none transition disabled:opacity-50"
+              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-lg shadow-sm text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 focus:outline-none transition disabled:opacity-50 cursor-pointer"
             >
               <span>{loading ? 'Signing in...' : 'Sign In to PaySoft'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -153,7 +190,7 @@ export const LoginView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => quickLogin('admin@demo.paysoft')}
-                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition"
+                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition cursor-pointer"
               >
                 <div className="font-bold text-sky-300">👑 Super Admin</div>
                 <div className="text-[10px] text-slate-400">admin@demo.paysoft</div>
@@ -162,7 +199,7 @@ export const LoginView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => quickLogin('hr@demo.paysoft')}
-                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition"
+                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition cursor-pointer"
               >
                 <div className="font-bold text-emerald-300">👥 HR Lead</div>
                 <div className="text-[10px] text-slate-400">hr@demo.paysoft</div>
@@ -171,7 +208,7 @@ export const LoginView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => quickLogin('accountant@demo.paysoft')}
-                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition"
+                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition cursor-pointer"
               >
                 <div className="font-bold text-indigo-300">💳 Accountant</div>
                 <div className="text-[10px] text-slate-400">accountant@demo.paysoft</div>
@@ -180,7 +217,7 @@ export const LoginView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => quickLogin('sakshi.nair@example.com')}
-                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition"
+                className="bg-slate-700/60 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-600 text-left transition cursor-pointer"
               >
                 <div className="font-bold text-amber-300">👤 Employee</div>
                 <div className="text-[10px] text-slate-400">sakshi.nair@...</div>

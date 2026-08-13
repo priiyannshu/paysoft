@@ -1,23 +1,26 @@
 ---
 import '../styles/global.css';
 import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
 
 interface Props {
   title?: string;
   currentPath?: string;
 }
 
-const { title = 'PaySoft v2 — Indian Payroll & HR Management', currentPath = '/' } = Astro.props;
+const { title = 'PaySoft v3 — Indian Payroll & HR Management', currentPath = '/' } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="PaySoft v2 — Indian Organization Payroll & Human Resources Management" />
+    <meta name="description" content="PaySoft v3 — Enterprise Indian Organization Payroll & Human Resources Management System" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="application-name" content="PaySoft Enterprise" />
     <title>{title}</title>
   </head>
   <body class="min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased font-sans">
@@ -25,6 +28,6 @@ const { title = 'PaySoft v2 — Indian Payroll & HR Management', currentPath = '
     <main class="flex-1">
       <slot />
     </main>
+    <Footer client:load />
   </body>
 </html>
-

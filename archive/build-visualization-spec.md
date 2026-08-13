@@ -347,21 +347,6 @@ This makes the visualization a **living document** — it grows with the project
 
 ---
 
-## 7. Build Decisions (recorded before build session)
-
-| Decision | Choice |
-|:---------|:-------|
-| Initial status | Phase 0 = done (green), all other phases = pending (gray) |
-| Missing `org-client` node | Remove connection on line 227 (references non-existent node) |
-| Data embedding | Inline JSON directly in HTML (single self-contained file) |
-| Layout direction | Vertical columns, left-to-right (Phase 0 left → Phase 11 right) |
-| Graph library | Cytoscape.js (inlined, offline-capable) |
-| Arrow style | Animated flowing dots |
-| Detail panel | Tooltip-style popover near clicked node |
-| Connection styling | Color by type (calls, imports, binds, writes, reads, serves, deploys each get distinct color) |
-
----
-
 ## 6. Summary Statistics
 
 | metric | count |
