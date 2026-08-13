@@ -4,12 +4,17 @@ import { payroll } from './lib/payroll/routes'
 import { ess } from './lib/ess/routes'
 import { audit } from './lib/audit/routes'
 import { docs } from './lib/docs/routes'
+import { notify } from './engines/7-notify/routes'
+import { handleQueueMessage } from './engines/7-notify/queue'
 import { PayrollRunLock } from './lib/payroll/durable-object'
 
 interface Env {
   DB: D1Database
   ASSETS: Fetcher
   PAYROLL_LOCK: DurableObjectNamespace
+  NOTIFY_QUEUE?: Queue<any>
+  SEND_EMAIL?: any
+  SENDER_EMAIL_ADDRESS?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -23,9 +28,15 @@ app.route('/api/payroll', payroll)
 app.route('/api/ess', ess)
 app.route('/api/audit', audit)
 app.route('/api/docs', docs)
+app.route('/api/notify', notify)
 app.route('/docs', docs)
 
-export default app
+export default {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
+    await handleQueueMessage(batch, env)
+  }
+}
 
 export { PayrollRunLock }
 
