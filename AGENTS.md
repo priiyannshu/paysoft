@@ -17,13 +17,15 @@
 
 ## Session State
 
-Check the existence of specific artifacts to determine the current session state:
+Current Status: **Session 5+ (EVOLVE)** — Core backend engines (Phases 0–3) and Phase 4 frontend baseline (`layer/01-frontend`) are deployed and operating locally. Next order of business is continuous frontend refinement, UX polish, and statutory workflow enhancement.
 
-- **Session 1 (PLAN):** No `docs/plan.md` exists. Goal: help the human define the application and populate `app/data/raw/`.
-- **Session 2 (SCAFFOLD):** `docs/plan.md` exists, but the codebase lacks a semantic scaffold. Goal: create Level 2 files containing only plain-language descriptions of their future code. Do not write implementation code.
-- **Session 3 (REVIEW):** Semantic scaffold exists, but no `docs/build.md`. Goal: assist the human in reviewing the scaffold and writing the execution plan.
-- **Session 4 (BUILD):** `docs/build.md` exists. Goal: write the actual code based on the execution plan and the semantic scaffold. Aim for a working deployment (`wrangler deploy`).
-- **Session 5+ (EVOLVE):** A working deployment exists. Goal: iterative improvement, bug fixing, or feature expansion.
+Check the existence of specific artifacts to determine lifecycle context:
+
+- **Session 1 (PLAN):** No `docs/plan.md` exists. Goal: define application and populate `app/data/raw/`.
+- **Session 2 (SCAFFOLD):** `docs/plan.md` exists. Semantic scaffold creation.
+- **Session 3 (REVIEW):** Semantic scaffold review and execution plan writing (`docs/build.md`).
+- **Session 4 (BUILD):** Core implementation across backend engines and frontend layers.
+- **Session 5+ (EVOLVE):** Active phase. Working local deployment exists. Goal: iterative improvement, UX enhancements, bug fixing, and statutory feature expansion.
 
 ## Architecture Boundaries
 
