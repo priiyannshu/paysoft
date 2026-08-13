@@ -14,5 +14,6 @@ export default defineWorkersConfig({
         inline: [/@lucia-auth/, /lucia/, /drizzle-orm/, /drizzle-kit/],
       },
     },
+    include: ['app/**/*.test.ts'],
   },
 })

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --dry-run",
-    "build:pwa": "echo 'placeholder \u2014 Astro build lands in Phase 4'",
+    "build:pwa": "echo 'placeholder — Astro build lands in Phase 4'",
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -18,15 +18,19 @@
   },
   "dependencies": {
     "@lucia-auth/adapter-drizzle": "^1.1.0",
+    "@react-pdf/renderer": "^4.6.0",
     "hono": "^4.0.0",
     "lucia": "^3.2.2",
     "oslo": "^1.2.1",
+    "react": "^19.2.8",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.0",
     "@cloudflare/workers-types": "^4.20240101.0",
     "@eslint/js": "^9.0.0",
+    "@types/react": "^19.2.18",
     "drizzle-kit": "^0.28.0",
     "drizzle-orm": "^0.36.0",
     "eslint": "^9.0.0",
