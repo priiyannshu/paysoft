@@ -108,16 +108,6 @@ def sql_val(v):
 
 def generate_organization():
     return "\n".join([
-        "-- Wipe all data (idempotent)",
-        "DELETE FROM salary_records;",
-        "DELETE FROM declarations;",
-        "DELETE FROM leave_records;",
-        "DELETE FROM employees;",
-        "DELETE FROM departments;",
-        "DELETE FROM configurations;",
-        "DELETE FROM audit_logs;",
-        "DELETE FROM organizations;",
-        "",
         "-- Organization",
         f"INSERT INTO organizations (id, name, code, address, state_code, created_at) "
         f"VALUES ({sql_val(ORG_ID)}, {sql_str(ORG_NAME)}, {sql_str(ORG_CODE)}, "
@@ -293,6 +283,7 @@ def generate_payroll_runs():
 
 if __name__ == "__main__":
     parts = [
+        "PRAGMA foreign_keys = OFF;",
         "DELETE FROM salary_records;",
         "DELETE FROM payroll_runs;",
         "DELETE FROM users;",
@@ -312,6 +303,7 @@ if __name__ == "__main__":
         generate_leave_records(),
         generate_users(),
         generate_payroll_runs(),
+        "PRAGMA foreign_keys = ON;",
     ]
     out = "\n".join(parts) + "\n"
     out_file = ROOT / "app/data/processed/seed.sql"

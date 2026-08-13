@@ -9,8 +9,9 @@ import {
   Calendar,
   Layers,
   ArrowDownToLine,
-  Sparkles,
-  ExternalLink
+  ExternalLink,
+  Printer,
+  Eye
 } from 'lucide-react';
 
 export const ReportsCenterView: React.FC = () => {
@@ -18,6 +19,7 @@ export const ReportsCenterView: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [generating, setGenerating] = useState<string | null>(null);
   const [downloadLog, setDownloadLog] = useState<any[]>([]);
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; html: string } | null>(null);
 
   const handleGenerate = async (endpoint: string, typeName: string, format: string) => {
     setGenerating(typeName);
@@ -35,30 +37,78 @@ export const ReportsCenterView: React.FC = () => {
 
       if (res.ok) {
         const json = await res.json();
+        const filename = json.filename || `${endpoint}-${selectedYear}-${selectedMonth}.${format.toLowerCase()}`;
+        
         const newLog = {
-          id: json.fileId || `${endpoint}-${Date.now()}`,
+          id: json.fileId || filename,
           name: `${typeName} (${selectedMonth}/${selectedYear})`,
           format,
-          url: json.url,
           timestamp: new Date().toLocaleTimeString()
         };
         setDownloadLog(prev => [newLog, ...prev]);
-        
-        // Trigger synthetic download
-        const blob = new Blob([`PaySoft v2 Generated Statutory Report: ${typeName}\nPeriod: ${selectedMonth}/${selectedYear}\nFile Reference: ${json.fileId}`], { type: 'text/plain' });
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = `${endpoint}-${selectedYear}-${selectedMonth}.${format.toLowerCase()}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+
+        // Process real file download based on format
+        if (json.dataBase64) {
+          // Base64 XLSX file
+          const binaryString = window.atob(json.dataBase64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          triggerDownload(blob, filename);
+        } else if (json.textContent) {
+          // Text format (ECR / ESI)
+          const blob = new Blob([json.textContent], { type: 'text/plain;charset=utf-8' });
+          triggerDownload(blob, filename);
+        } else if (json.htmlContent) {
+          // HTML Document (Payslip / Form 16)
+          const blob = new Blob([json.htmlContent], { type: 'text/html;charset=utf-8' });
+          triggerDownload(blob, filename);
+        }
+      }
+    } catch (e) {
+      console.error('Report generation error:', e);
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const handlePreview = async (endpoint: string, typeName: string) => {
+    setGenerating(typeName);
+    try {
+      const res = await fetch(`/api/docs/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month: parseInt(selectedMonth, 10),
+          year: parseInt(selectedYear, 10),
+          orgId: 'org_demo_001',
+          employeeId: 'emp_0001'
+        })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.htmlContent) {
+          setPreviewDoc({ title: typeName, html: json.htmlContent });
+        }
       }
     } catch (e) {
       console.error(e);
     } finally {
       setGenerating(null);
     }
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
   };
 
   const reports = [
@@ -68,10 +118,10 @@ export const ReportsCenterView: React.FC = () => {
       category: 'Bank Report(s)',
       format: 'XLSX',
       badge: 'Disbursal Ready',
-      desc: 'Standard NEFT/RTGS batch file with Beneficiary Name, Account Number, IFSC Code, and Net Pay for HDFC, SBI, ICICI, Axis portals.',
+      desc: 'NEFT/RTGS batch file with Beneficiary Name, Account Number, IFSC Code, and Net Pay for HDFC, SBI, ICICI, Axis portals.',
       endpoint: 'bank-advice',
       icon: Building,
-      color: 'sky'
+      hasPreview: false,
     },
     {
       id: 'ecr',
@@ -79,10 +129,10 @@ export const ReportsCenterView: React.FC = () => {
       category: 'Fund - PF Report',
       format: 'TXT',
       badge: 'Statutory EPFO',
-      desc: 'Fixed-width EPFO format (#~#) with Member UAN, Gross Wages, EPF Wages (capped at ₹15k), 8.33% EPS, and 3.67% EPF contributions.',
+      desc: 'Official EPFO format (#~#) with Member UAN, Gross Wages, EPF Wages (capped at ₹15,000), 8.33% EPS, and 3.67% EPF contributions.',
       endpoint: 'ecr',
       icon: ShieldCheck,
-      color: 'emerald'
+      hasPreview: false,
     },
     {
       id: 'esi',
@@ -91,31 +141,31 @@ export const ReportsCenterView: React.FC = () => {
       format: 'TXT',
       badge: 'ESIC Portal Ready',
       desc: 'Monthly return containing Insured Person (IP) Number, Days Worked, Total Monthly Wages, and 0.75% / 3.25% deductions under ₹21,000.',
-      endpoint: 'ecr',
+      endpoint: 'esi',
       icon: ShieldCheck,
-      color: 'indigo'
+      hasPreview: false,
     },
     {
       id: 'payslip',
-      title: 'Employee Pay Slip (PDF)',
+      title: 'Employee Pay Slip',
       category: 'Pay Slip',
-      format: 'PDF',
-      badge: 'DOB Protected',
-      desc: 'Official monthly payslip with earnings heads, statutory deductions, YTD summary, and date-of-birth encryption protection.',
+      format: 'HTML',
+      badge: 'Official Format',
+      desc: 'Monthly payslip with itemized earnings heads, statutory deductions, YTD summary, and net take-home pay.',
       endpoint: 'payslip',
       icon: FileText,
-      color: 'rose'
+      hasPreview: true,
     },
     {
       id: 'form16',
       title: 'Form 16 Part B (TDS Certificate)',
       category: 'TDS Report(s)',
-      format: 'PDF',
+      format: 'HTML',
       badge: 'Income Tax Act',
       desc: 'Annual statutory certificate of tax deducted at source under Section 203 of the Income Tax Act with chapter VI-A deductions.',
       endpoint: 'form16',
       icon: FileSpreadsheet,
-      color: 'amber'
+      hasPreview: true,
     },
     {
       id: 'register',
@@ -124,9 +174,9 @@ export const ReportsCenterView: React.FC = () => {
       format: 'XLSX',
       badge: 'Complete Master',
       desc: 'Full matrix of all 385 employees with Department, Basic, DA, HRA, Gross, PF, ESI, TDS, Professional Tax, and Net Payable.',
-      endpoint: 'bank-advice',
+      endpoint: 'register',
       icon: FileSpreadsheet,
-      color: 'teal'
+      hasPreview: false,
     },
   ];
 
@@ -136,13 +186,13 @@ export const ReportsCenterView: React.FC = () => {
       <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-slate-800">Zero-Hassle Reports Download Center</h1>
-            <span className="bg-sky-100 text-sky-800 text-[10px] uppercase font-black px-2 py-0.5 rounded border border-sky-300">
-              Engine 6 Connected
+            <h1 className="text-xl font-bold text-slate-800">Zero-Hassle Reports Center</h1>
+            <span className="bg-sky-50 text-sky-700 text-[11px] font-semibold px-2.5 py-0.5 rounded border border-sky-200">
+              Statutory Compliant
             </span>
           </div>
-          <p className="text-xs text-slate-500">
-            One-click statutory document generation: Bank Advice, EPF ECR, ESI Returns, Form 16, and Payslips
+          <p className="text-xs text-slate-500 mt-0.5">
+            Instant document generation: Bank Advice, EPF ECR, ESI Returns, Form 16, and Pay Slips
           </p>
         </div>
 
@@ -201,19 +251,32 @@ export const ReportsCenterView: React.FC = () => {
                 </p>
               </div>
 
-              <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+              <div className="border-t border-slate-100 pt-3 flex items-center justify-between gap-2">
                 <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                   {r.badge}
                 </span>
 
-                <button
-                  onClick={() => handleGenerate(r.endpoint, r.title, r.format)}
-                  disabled={isBusy}
-                  className="flex items-center space-x-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded text-xs font-semibold shadow-xs transition"
-                >
-                  <Download className={`w-3.5 h-3.5 ${isBusy ? 'animate-bounce' : ''}`} />
-                  <span>{isBusy ? 'Generating...' : `Download ${r.format}`}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {r.hasPreview && (
+                    <button
+                      onClick={() => handlePreview(r.endpoint, r.title)}
+                      disabled={isBusy}
+                      title="Preview Document"
+                      className="p-1.5 text-slate-600 hover:text-sky-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleGenerate(r.endpoint, r.title, r.format)}
+                    disabled={isBusy}
+                    className="flex items-center space-x-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded text-xs font-semibold shadow-xs transition"
+                  >
+                    <Download className={`w-3.5 h-3.5 ${isBusy ? 'animate-bounce' : ''}`} />
+                    <span>{isBusy ? 'Generating...' : `Download ${r.format}`}</span>
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -225,7 +288,7 @@ export const ReportsCenterView: React.FC = () => {
         <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm space-y-2">
           <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
             <span>Recent Downloads Session Log</span>
-            <span className="text-[11px] text-slate-400 font-normal">Generated in Edge Memory & R2</span>
+            <span className="text-[11px] text-slate-400 font-normal">Generated in Session</span>
           </div>
 
           <div className="divide-y divide-slate-100 text-xs">
@@ -241,6 +304,49 @@ export const ReportsCenterView: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-300">
+            <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-sky-400" />
+                <span className="font-bold text-sm">{previewDoc.title} — Official Preview</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      printWindow.document.write(previewDoc.html);
+                      printWindow.document.close();
+                      printWindow.focus();
+                      printWindow.print();
+                    }
+                  }}
+                  className="flex items-center space-x-1 bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1 rounded text-xs font-semibold"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="text-slate-400 hover:text-white px-2 py-1 text-sm font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-50">
+              <div
+                dangerouslySetInnerHTML={{ __html: previewDoc.html }}
+                className="bg-white shadow-sm rounded border border-slate-200"
+              />
+            </div>
           </div>
         </div>
       )}

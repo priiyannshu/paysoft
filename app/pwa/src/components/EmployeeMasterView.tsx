@@ -231,7 +231,7 @@ export const EmployeeMasterView: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-400 font-sans text-xs">
-                    Loading employee directory from Cloudflare D1...
+                    Loading employee directory...
                   </td>
                 </tr>
               ) : employees.length === 0 ? (
@@ -658,7 +658,7 @@ export const EmployeeMasterView: React.FC = () => {
                       FY 2025–2026 Old vs. New Tax Regime Comparison Simulator
                     </h3>
                     <p className="text-[11px] text-sky-700 mt-0.5">
-                      Live comparative calculation computed using PaySoft Engine 3 pure statutory rules
+                      Live comparative calculation computed using standard Income Tax statutory rules
                     </p>
                   </div>
 

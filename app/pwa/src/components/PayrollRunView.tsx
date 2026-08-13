@@ -24,7 +24,7 @@ export const PayrollRunView: React.FC = () => {
 
   const handleExecuteRun = async () => {
     setRunning(true);
-    setStatusMessage('Acquiring Cloudflare Durable Object Lock (PayrollRunLock)...');
+    setStatusMessage('Acquiring transaction lock & computing salaries...');
     try {
       // Build 100 sample employees for run
       const employees = Array.from({ length: 107 }, (_, i) => {
@@ -58,10 +58,10 @@ export const PayrollRunView: React.FC = () => {
         const data = await res.json();
         setRunResult(data);
         setRunStatus('computed');
-        setStatusMessage('Payroll computed successfully! All 107 employee records saved to D1.');
+        setStatusMessage('Payroll computed successfully! All 107 employee records processed and saved.');
       } else {
         const err = await res.json();
-        setStatusMessage(`Run blocked: ${err.error || 'Concurrent lock active or error'}`);
+        setStatusMessage(`Run blocked: ${err.error || 'Concurrent process active or error'}`);
       }
     } catch (e: any) {
       setStatusMessage(`Payroll run error: ${e.message}`);
@@ -72,7 +72,7 @@ export const PayrollRunView: React.FC = () => {
 
   const handleFreezeMonth = async () => {
     setFreezing(true);
-    setStatusMessage('Freezing payroll month... Making records immutable in D1.');
+    setStatusMessage('Freezing payroll month... Setting period as immutable.');
     try {
       const monthId = `org_demo_001:${selectedYear}:${selectedMonth}`;
       const res = await fetch(`/api/payroll/freeze/${monthId}`, {
@@ -81,7 +81,7 @@ export const PayrollRunView: React.FC = () => {
 
       if (res.ok) {
         setRunStatus('frozen');
-        setStatusMessage(`Month ${selectedMonth}/${selectedYear} is now PERMANENTLY FROZEN. Edits are locked.`);
+        setStatusMessage(`Month ${selectedMonth}/${selectedYear} is now PERMANENTLY FROZEN. Statutory records are locked.`);
       } else {
         const err = await res.json();
         setStatusMessage(`Freeze error: ${err.error}`);
@@ -104,12 +104,12 @@ export const PayrollRunView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-800">Payroll Execution & Lifecycle Console</h1>
-            <span className="bg-indigo-100 text-indigo-800 text-[10px] uppercase font-black px-2 py-0.5 rounded border border-indigo-300">
-              Engine 4 + Durable Object Lock
+            <span className="bg-indigo-50 text-indigo-700 text-[11px] font-semibold px-2.5 py-0.5 rounded border border-indigo-200">
+              State Control
             </span>
           </div>
-          <p className="text-xs text-slate-500">
-            Atomic payroll calculation, distributed locking, statutory deductions math, and immutable month freezing
+          <p className="text-xs text-slate-500 mt-0.5">
+            Atomic payroll calculation, statutory deductions breakdown, and immutable period freeze controls
           </p>
         </div>
 
@@ -154,7 +154,7 @@ export const PayrollRunView: React.FC = () => {
               <Cpu className={`w-3.5 h-3.5 ${running ? 'animate-spin' : ''}`} />
               <span>2. Processing</span>
             </div>
-            <div className="text-[10px] font-normal mt-0.5">DO Lock Acquired</div>
+            <div className="text-[10px] font-normal mt-0.5">Calculating Heads</div>
           </div>
 
           <div className={`p-3 rounded-lg border transition ${

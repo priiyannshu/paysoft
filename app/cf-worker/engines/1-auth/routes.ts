@@ -70,7 +70,7 @@ authRoutes.post('/logout', async (c) => {
     const cookies = cookieHeader.split(';').map((c) => c.trim())
     for (const cookie of cookies) {
       const [name, ...rest] = cookie.split('=')
-      if (name === 'session') {
+      if (name === 'auth_session' || name === 'session') {
         const sessionId = rest.join('=')
         const blankCookie = await revokeSession(c.env.DB, sessionId)
         c.header('Set-Cookie', blankCookie)
@@ -113,7 +113,7 @@ authRoutes.post('/refresh', async (c) => {
   const cookies = cookieHeader.split(';').map((c) => c.trim())
   for (const cookie of cookies) {
     const [name, ...rest] = cookie.split('=')
-    if (name === 'session') {
+    if (name === 'auth_session' || name === 'session') {
       const sessionId = rest.join('=')
       const result = await validateSession(c.env.DB, sessionId)
       if (result?.cookie) {

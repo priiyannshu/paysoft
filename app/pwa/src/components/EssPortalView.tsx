@@ -148,8 +148,8 @@ export const EssPortalView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-800">Employee Self-Service (ESS) & Tax Portal</h1>
-            <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-black px-2 py-0.5 rounded border border-emerald-300">
-              Engine 5 Connected
+            <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2.5 py-0.5 rounded border border-emerald-200">
+              Staff Portal
             </span>
           </div>
           <p className="text-xs text-slate-500">
@@ -486,7 +486,7 @@ export const EssPortalView: React.FC = () => {
                 <h3 className="font-bold text-xs">PaySoft AI Payroll & Compliance Assistant</h3>
                 <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Online • Cloudflare Workers AI Ready
+                  Online • 24/7 Tax & Payroll Help
                 </span>
               </div>
             </div>

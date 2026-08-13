@@ -1,3 +1,4 @@
+PRAGMA foreign_keys = OFF;
 DELETE FROM salary_records;
 DELETE FROM payroll_runs;
 DELETE FROM users;
@@ -9,16 +10,6 @@ DELETE FROM departments;
 DELETE FROM configurations;
 DELETE FROM audit_logs;
 DELETE FROM organizations;
--- Wipe all data (idempotent)
-DELETE FROM salary_records;
-DELETE FROM declarations;
-DELETE FROM leave_records;
-DELETE FROM employees;
-DELETE FROM departments;
-DELETE FROM configurations;
-DELETE FROM audit_logs;
-DELETE FROM organizations;
-
 -- Organization
 INSERT INTO organizations (id, name, code, address, state_code, created_at) VALUES ('org_demo_001', 'Makcomputers Rai Pvt Ltd', 'DEMO', '123 Industrial Area, Pune, Maharashtra', 'MH', unixepoch());
 
@@ -1768,3 +1759,4 @@ INSERT INTO salary_records (id, org_id, employee_id, month, year, status, basic_
 INSERT INTO salary_records (id, org_id, employee_id, month, year, status, basic_pay, da, hra, gross_earnings, tds, pf_employee, pf_employer, pf_eps, esi_employee, esi_employer, professional_tax, total_deductions, net_pay, run_id, created_at, updated_at) VALUES ('sr_2026_03_emp_0105', 'org_demo_001', 'emp_0105', 3, 2026, 'computed', 15728, 11796, 4718, 32242, 0, 1800, 550, 1250, 0, 0, 200, 2000, 30242, 'PR-DEMO-2026-03', unixepoch(), unixepoch());
 INSERT INTO salary_records (id, org_id, employee_id, month, year, status, basic_pay, da, hra, gross_earnings, tds, pf_employee, pf_employer, pf_eps, esi_employee, esi_employer, professional_tax, total_deductions, net_pay, run_id, created_at, updated_at) VALUES ('sr_2026_03_emp_0106', 'org_demo_001', 'emp_0106', 3, 2026, 'computed', 15735, 1259, 4720, 21714, 0, 1800, 550, 1250, 0, 0, 200, 2000, 19714, 'PR-DEMO-2026-03', unixepoch(), unixepoch());
 INSERT INTO salary_records (id, org_id, employee_id, month, year, status, basic_pay, da, hra, gross_earnings, tds, pf_employee, pf_employer, pf_eps, esi_employee, esi_employer, professional_tax, total_deductions, net_pay, run_id, created_at, updated_at) VALUES ('sr_2026_03_emp_0107', 'org_demo_001', 'emp_0107', 3, 2026, 'computed', 15742, 11806, 4723, 32271, 0, 1800, 550, 1250, 0, 0, 200, 2000, 30271, 'PR-DEMO-2026-03', unixepoch(), unixepoch());
+PRAGMA foreign_keys = ON;

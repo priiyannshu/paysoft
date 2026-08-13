@@ -69,7 +69,7 @@ export const LoginView: React.FC = () => {
           PaySoft v2 Enterprise Portal
         </h2>
         <p className="text-xs text-slate-400">
-          Indian Statutory Payroll & HR Management Engine on Cloudflare Edge
+          Enterprise Indian Organization Payroll & Human Resources Management
         </p>
       </div>
 
@@ -125,11 +125,11 @@ export const LoginView: React.FC = () => {
               </div>
             </div>
 
-            {/* Cloudflare Turnstile Slot Placeholder (Phase 7 activates) */}
+            {/* Security Badge */}
             <div className="p-2.5 bg-slate-900/50 border border-dashed border-slate-600 rounded-lg text-center">
               <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                <span>Cloudflare Turnstile Protected</span>
+                <span>Protected by Enterprise Security</span>
               </div>
             </div>
 
@@ -138,7 +138,7 @@ export const LoginView: React.FC = () => {
               disabled={loading}
               className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-lg shadow-sm text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 focus:outline-none transition disabled:opacity-50"
             >
-              <span>{loading ? 'Authenticating with Lucia Edge...' : 'Sign In to PaySoft'}</span>
+              <span>{loading ? 'Signing in...' : 'Sign In to PaySoft'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

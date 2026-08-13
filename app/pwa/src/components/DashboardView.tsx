@@ -114,13 +114,13 @@ export const DashboardView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-bold text-slate-800">Executive Dashboard & Audit Overview</h1>
+              <h1 className="text-xl font-bold text-slate-800">Executive Overview & Compliance Dashboard</h1>
               <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-medium border border-emerald-300 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Live Engine Connected
+                <CheckCircle2 className="w-3 h-3" /> System Active
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Multi-tenant payroll engine, live audit verification, and salary disbursal records
+              Enterprise Indian payroll, compliance verification, and statutory records
             </p>
           </div>
         </div>
@@ -132,7 +132,7 @@ export const DashboardView: React.FC = () => {
             className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-md text-xs font-semibold shadow transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${auditRunning ? 'animate-spin text-sky-400' : ''}`} />
-            <span>{auditRunning ? 'Scanning Audit Rules...' : 'Run Live Audit Scan'}</span>
+            <span>{auditRunning ? 'Scanning Audit Rules...' : 'Run Live Compliance Scan'}</span>
           </button>
 
           <a
