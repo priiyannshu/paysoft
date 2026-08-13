@@ -22,5 +22,19 @@
 			"database_name": "paysoft",
 			"database_id": "033e9f6e-7aef-4c8c-bd12-d8498e536935"
 		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "PAYROLL_LOCK",
+				"class_name": "PayrollRunLock"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_classes": ["PayrollRunLock"]
+		}
 	]
 }
