@@ -1,10 +1,12 @@
 import { Hono } from 'hono'
 import { executePayrollRun } from './engine'
+import { invalidateCache, CACHE_KEYS } from '../../cache/kv'
 import type { PayrollRunInput, PayrollRunStatus } from './types'
 
 interface PayrollEnv {
   Bindings: {
     DB: D1Database
+    KV?: KVNamespace
     PAYROLL_LOCK: DurableObjectNamespace
   }
 }
@@ -148,6 +150,9 @@ payroll.post('/run', async (c) => {
       body: JSON.stringify({ nextStatus: 'computed' }),
       headers: { 'Content-Type': 'application/json' },
     }))
+
+    // Invalidate audit report cache for org
+    await invalidateCache(c.env.KV, CACHE_KEYS.auditResults(orgId))
 
     // Write audit log for run completion
     await c.env.DB.prepare(
@@ -335,6 +340,9 @@ payroll.post('/freeze/:monthId', async (c) => {
   await c.env.DB.prepare(
     `UPDATE payroll_runs SET status = 'frozen', updated_at = ? WHERE id = ?`
   ).bind(new Date().toISOString(), run.id as string).run()
+
+  // Invalidate audit report cache for org
+  await invalidateCache(c.env.KV, CACHE_KEYS.auditResults(orgId))
 
   // Write audit log for freeze
   await c.env.DB.prepare(

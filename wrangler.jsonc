@@ -24,6 +24,12 @@
 			"bucket_name": "paysoft-uploads"
 		}
 	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "paysoft-kv-namespace-id"
+		}
+	],
 	"durable_objects": {
 		"bindings": [
 			{

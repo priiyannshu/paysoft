@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
 import { authMiddleware } from './middleware/org-id'
+import { cacheControlMiddleware } from './middleware/cache-control'
+import { authLoginLimiter, payrollRunLimiter, generalApiLimiter } from './middleware/rate-limit'
 import { authRoutes } from './engines/1-auth/routes'
 import { tax } from './lib/tax/routes'
 import { payroll } from './lib/payroll/routes'
@@ -8,15 +10,18 @@ import { audit } from './lib/audit/routes'
 import { docs } from './lib/docs/routes'
 import { notify } from './engines/7-notify/routes'
 import { apiRoutes } from './engines/api/routes'
+import { adminRoutes } from './admin/routes'
 import { aiRoutes } from './ai/routes'
 import { handlePayslipQueue } from './queues/payslip-consumer'
 import { handleNotifyQueue } from './queues/notify-consumer'
 import { PayrollRunLock } from './lib/payroll/durable-object'
+import type { KVNamespace } from '@cloudflare/workers-types'
 
 interface Env {
   DB: D1Database
   ASSETS: Fetcher
   BUCKET?: R2Bucket
+  KV: KVNamespace
   PAYROLL_LOCK: DurableObjectNamespace
   PAYSLIP_QUEUE?: Queue<any>
   NOTIFY_QUEUE?: Queue<any>
@@ -28,10 +33,19 @@ interface Env {
 
 const app = new Hono<{ Bindings: Env }>()
 
+// 1. Global Cache-Control header strategy middleware
+app.use('*', cacheControlMiddleware)
+
+// 2. Global authentication and multi-tenant resolution
 app.use('*', authMiddleware)
 
+// 3. Rate limiting rules
+app.use('/auth/login', authLoginLimiter)
+app.use('/api/payroll/run', payrollRunLimiter)
+app.use('/api/*', generalApiLimiter)
+
 app.get('/api/health', (c) => {
-  return c.json({ ok: true, version: '2.0.0', stage: 'phase-5-compute' })
+  return c.json({ ok: true, version: '2.0.0', stage: 'phase-6-8-caching-rate-limiting' })
 })
 
 app.route('/auth', authRoutes)
@@ -41,6 +55,8 @@ app.route('/api/ess', ess)
 app.route('/api/audit', audit)
 app.route('/api/docs', docs)
 app.route('/api/notify', notify)
+app.route('/api/admin', adminRoutes)
+app.route('/admin', adminRoutes)
 app.route('/api/ai', aiRoutes)
 app.route('/api', apiRoutes)
 app.route('/docs', docs)
@@ -66,5 +82,5 @@ export default {
   },
 }
 
-export { PayrollRunLock }
+export { app, PayrollRunLock }
 export type AppType = typeof app

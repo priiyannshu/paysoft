@@ -1,6 +1,8 @@
 import { createLucia } from './lucia'
 import { createSession, updateSessionExpiration } from '../db/repositories'
 import { createDb } from '../db/client'
+import { getCached, setCache, invalidateCache, CACHE_KEYS, CACHE_TTLS } from '../cache/kv'
+import type { KVNamespace } from '@cloudflare/workers-types'
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7 // 7 days
 const REFRESH_THRESHOLD_MS = 1000 * 60 * 60 * 24 * 3 // refresh if < 3 days left
@@ -14,7 +16,12 @@ export interface SessionUser {
   status: string
 }
 
-export async function createUserSession(d1: D1Database, userId: string, orgId: string): Promise<string> {
+export async function createUserSession(
+  d1: D1Database,
+  userId: string,
+  orgId: string,
+  kv?: KVNamespace
+): Promise<string> {
   const db = createDb(d1)
   const lucia = createLucia(d1)
   const sessionId = crypto.randomUUID()
@@ -31,7 +38,26 @@ export async function createUserSession(d1: D1Database, userId: string, orgId: s
   return session.serialize()
 }
 
-export async function validateSession(d1: D1Database, sessionId: string): Promise<{ user: SessionUser; cookie: string | null } | null> {
+export async function validateSession(
+  d1: D1Database,
+  sessionId: string,
+  kv?: KVNamespace
+): Promise<{ user: SessionUser; cookie: string | null } | null> {
+  const key = CACHE_KEYS.session(sessionId)
+
+  // 1. Check KV cache for session
+  if (kv) {
+    try {
+      const cachedUser = await kv.get(key, 'json') as SessionUser | null
+      if (cachedUser) {
+        return { user: cachedUser, cookie: null }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 2. Validate via Lucia / D1 on cache miss
   const lucia = createLucia(d1)
   const { session, user } = await lucia.validateSession(sessionId)
 
@@ -49,27 +75,45 @@ export async function validateSession(d1: D1Database, sessionId: string): Promis
     cookie = newCookie.serialize()
   }
 
+  const sessionUser: SessionUser = {
+    id: user.id,
+    orgId: user.orgId,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+    status: user.status,
+  }
+
+  // Store in KV cache for quick subsequent lookups
+  if (kv) {
+    await setCache(kv, key, sessionUser, CACHE_TTLS.SESSION)
+  }
+
   return {
-    user: {
-      id: user.id,
-      orgId: user.orgId,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      status: user.status,
-    },
+    user: sessionUser,
     cookie,
   }
 }
 
-export async function revokeSession(d1: D1Database, sessionId: string): Promise<string> {
+export async function revokeSession(
+  d1: D1Database,
+  sessionId: string,
+  kv?: KVNamespace
+): Promise<string> {
+  if (kv) {
+    await invalidateCache(kv, CACHE_KEYS.session(sessionId))
+  }
   const lucia = createLucia(d1)
   await lucia.invalidateSession(sessionId)
   const blankCookie = lucia.createBlankSessionCookie()
   return blankCookie.serialize()
 }
 
-export async function revokeAllUserSessions(d1: D1Database, userId: string): Promise<void> {
+export async function revokeAllUserSessions(
+  d1: D1Database,
+  userId: string,
+  kv?: KVNamespace
+): Promise<void> {
   const lucia = createLucia(d1)
   await lucia.invalidateUserSessions(userId)
 }

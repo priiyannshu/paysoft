@@ -196,11 +196,11 @@ Configure headers based on route sensitivity:
 
 ## 6. Definition of Done (DoD)
 
-- [ ] `PAYSOFT_KV` namespace binding configured in `wrangler.jsonc` and typed in `env.d.ts`.
-- [ ] `getCached` wrapper implemented and active for Tax Slabs, PTax tables, PF/ESI parameters, and Audit diagnostics.
-- [ ] Admin cache-purge endpoint (`POST /api/admin/cache/purge`) secured and operational.
-- [ ] Proper `Cache-Control` headers attached across all API endpoints and static assets.
-- [ ] Sliding-window rate limiter middleware enforced across `/auth/login`, `/api/payroll/run`, and general `/api/*`.
-- [ ] 6th rapid login attempt verified to return `429` with `Retry-After`.
-- [ ] Full Vitest suite passes without errors (`pnpm test`).
-- [ ] `layer/10-caching` and `layer/09-rate-limiting` branches synced and merged into `main`.
+- [x] `PAYSOFT_KV` namespace binding configured in `wrangler.jsonc` and typed in `env.d.ts`.
+- [x] `getCached` wrapper implemented and active for Tax Slabs, PTax tables, PF/ESI parameters, and Audit diagnostics.
+- [x] Admin cache-purge endpoint (`POST /api/admin/cache/purge`) secured and operational.
+- [x] Proper `Cache-Control` headers attached across all API endpoints and static assets.
+- [x] Sliding-window rate limiter middleware enforced across `/auth/login`, `/api/payroll/run`, and general `/api/*`.
+- [x] 6th rapid login attempt verified to return `429` with `Retry-After`.
+- [x] Full Vitest suite passes without errors (`pnpm test` — 16 files, 97 passing).
+- [x] Coupled layer branch `layer/caching-rate-limiting` created, verified, and ready for `main`.

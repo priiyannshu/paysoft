@@ -1,10 +1,11 @@
-import type { D1Database, Fetcher, R2Bucket, VectorizeIndex, Queue, DurableObjectNamespace } from '@cloudflare/workers-types'
+import type { D1Database, Fetcher, R2Bucket, VectorizeIndex, Queue, DurableObjectNamespace, KVNamespace } from '@cloudflare/workers-types'
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
     DB: D1Database
     ASSETS: Fetcher
     BUCKET?: R2Bucket
+    KV?: KVNamespace
     PAYROLL_LOCK: DurableObjectNamespace
     PAYSLIP_QUEUE?: Queue<any>
     NOTIFY_QUEUE?: Queue<any>
@@ -19,6 +20,7 @@ interface Env {
   DB: D1Database
   ASSETS: Fetcher
   BUCKET?: R2Bucket
+  KV: KVNamespace
   PAYROLL_LOCK: DurableObjectNamespace
   PAYSLIP_QUEUE?: Queue<any>
   NOTIFY_QUEUE?: Queue<any>
