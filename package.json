@@ -9,6 +9,7 @@
     "build": "wrangler deploy --dry-run",
     "build:pwa": "astro build --root app/pwa",
     "deploy": "wrangler deploy",
+    "pretest": "mkdir -p app/pwa/dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint app/",
