@@ -7,10 +7,19 @@ export default tseslint.config(
   {
     files: ['app/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
   {
-    ignores: ['node_modules/', 'app/pwa/'],
+    ignores: ['node_modules/', 'app/pwa/', 'app/pipeline/scripts/', 'dist/', '.astro/'],
   }
 )

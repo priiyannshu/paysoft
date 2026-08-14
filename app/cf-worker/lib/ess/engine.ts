@@ -1,4 +1,4 @@
-import { TaxDeclarationRecord, LeaveApplication, LeaveBalance } from './types'
+import { TaxDeclarationRecord, LeaveApplication } from './types'
 import { TaxDeclarations } from '../tax/types'
 
 export class ESSEngine {

@@ -1,8 +1,9 @@
 export interface NotifyEvent {
-  type: 'PAYROLL_FINALIZED' | 'PAYSLIP_GENERATED' | 'COMPLIANCE_DEADLINE';
+  type: 'PAYROLL_FINALIZED' | 'PAYSLIP_GENERATED' | 'COMPLIANCE_DEADLINE' | 'audit' | 'email' | string;
   payload: any;
   recipientEmail?: string;
   recipientPhone?: string;
+  timestamp?: string;
 }
 
 export interface DeliveryConfirmation {

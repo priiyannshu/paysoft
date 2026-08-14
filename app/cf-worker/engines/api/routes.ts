@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { CreateEmployeeSchema } from '../../security/schemas'
-import { eq, and, sql, desc, asc, like, or } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { createDb } from '../../db/client'
 import {
   organizations,
@@ -9,10 +9,6 @@ import {
   employees,
   salaryRecords,
   configurations,
-  auditLogs,
-  declarations,
-  leaveRecords,
-  users
 } from '../../db/schema'
 import { getAuth } from '../../middleware/org-id'
 
@@ -411,8 +407,6 @@ apiRoutes.get('/annual-statement/:employeeId', async (c) => {
   const da = Math.round(basic * ((emp.daPercent || 75) / 100))
   const hra = Math.round(basic * ((emp.hraPercent || 30) / 100))
   const gross = basic + da + hra
-  const pfEps = 1250
-  const pfEpf = 550
   const pfNet = 1800
   const ptax = 0
   const tds = 0

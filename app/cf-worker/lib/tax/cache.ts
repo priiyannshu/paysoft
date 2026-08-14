@@ -1,5 +1,5 @@
 import type { KVNamespace, D1Database } from '@cloudflare/workers-types'
-import { getCached, setCache, invalidateCache, CACHE_KEYS, CACHE_TTLS } from '../../cache/kv'
+import { getCached, setCache, CACHE_KEYS, CACHE_TTLS } from '../../cache/kv'
 import {
   OLD_REGIME_SLABS,
   NEW_REGIME_SLABS,

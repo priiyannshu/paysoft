@@ -52,7 +52,7 @@ export async function handleScheduledBackup(
       tableData[tableName] = results || []
       counts[tableName] = (results || []).length
       totalRecords += (results || []).length
-    } catch (err: any) {
+    } catch (_err: any) {
       // If a table doesn't exist yet in the schema, record empty array without failing
       tableData[tableName] = []
       counts[tableName] = 0
@@ -85,7 +85,7 @@ export async function handleScheduledBackup(
       uploadBuffer = await new Response(cs.readable).arrayBuffer()
       isGzip = true
     }
-  } catch (err) {
+  } catch (_err) {
     // Fallback to uncompressed JSON bytes if CompressionStream is unavailable
     uploadBuffer = rawBytes
     isGzip = false

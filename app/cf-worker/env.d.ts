@@ -13,19 +13,26 @@ declare module 'cloudflare:test' {
     AI?: any
     SEND_EMAIL?: any
     SENDER_EMAIL_ADDRESS?: string
+    TURNSTILE_SECRET?: string
   }
 }
 
-interface Env {
-  DB: D1Database
-  ASSETS: Fetcher
-  BUCKET?: R2Bucket
-  KV: KVNamespace
-  PAYROLL_LOCK: DurableObjectNamespace
-  PAYSLIP_QUEUE?: Queue<any>
-  NOTIFY_QUEUE?: Queue<any>
-  VECTORIZE_INDEX?: VectorizeIndex
-  AI?: any
-  SEND_EMAIL?: any
-  SENDER_EMAIL_ADDRESS?: string
+declare global {
+  interface Env {
+    DB: D1Database
+    ASSETS: Fetcher
+    BUCKET?: R2Bucket
+    KV: KVNamespace
+    PAYROLL_LOCK: DurableObjectNamespace
+    PAYSLIP_QUEUE?: Queue<any>
+    NOTIFY_QUEUE?: Queue<any>
+    VECTORIZE_INDEX?: VectorizeIndex
+    AI?: any
+    SEND_EMAIL?: any
+    SENDER_EMAIL_ADDRESS?: string
+    TURNSTILE_SECRET?: string
+  }
 }
+
+export type { Env }
+

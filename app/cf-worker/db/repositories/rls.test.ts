@@ -1,21 +1,9 @@
-import { describe, test, expect, beforeAll } from 'vitest';
-import { createDb } from '../client';
+import { describe, test, expect } from 'vitest';
 import { getEmployee, getSalaryRecords, getDeclarations, updateEmployee } from './index';
 
-// We mock a D1 database using local sqlite for this test.
-// Assuming tests are run with a setup that provides env.DB or similar.
-// For the sake of the exercise, we write the assertions based on the repository implementations.
+// Multi-tenant row-level isolation assertions
 
 describe('Multi-Tenant RLS Security Audit', () => {
-  const ORG_ALPHA = 'org_alpha';
-  const ORG_BETA = 'org_beta';
-  let db: any;
-
-  beforeAll(async () => {
-    // In a real test, we would setup an in-memory SQLite and run schema migrations.
-    // Here we will just use a mock or rely on the actual implementation if run in integration environment.
-    // For demonstration, we assume db is properly injected.
-  });
 
   test('Repository functions enforce orgId in signatures', () => {
     // We can use reflection or simply assert that the functions require orgId.

@@ -35,12 +35,12 @@ describe('Cloudflare Queues Batch Processing & Consumers', () => {
       }),
     ]
 
-    const batch: MessageBatch<PayslipJobMessage> = {
+    const batch = {
       queue: 'paysoft-payslip-queue',
       messages,
       ackAll: vi.fn(),
       retryAll: vi.fn(),
-    }
+    } as unknown as MessageBatch<PayslipJobMessage>
 
     const r2Puts: Array<{ key: string; options?: any }> = []
     const mockR2 = {
@@ -91,12 +91,12 @@ describe('Cloudflare Queues Batch Processing & Consumers', () => {
       employeeId: 'emp_err',
     })
 
-    const batch: MessageBatch<PayslipJobMessage> = {
+    const batch = {
       queue: 'paysoft-payslip-queue',
       messages: [badMessage],
       ackAll: vi.fn(),
       retryAll: vi.fn(),
-    }
+    } as unknown as MessageBatch<PayslipJobMessage>
 
     const mockR2 = {
       put: vi.fn(async () => {
@@ -135,12 +135,12 @@ describe('Cloudflare Queues Batch Processing & Consumers', () => {
       }),
     ]
 
-    const batch: MessageBatch<NotifyJobMessage> = {
+    const batch = {
       queue: 'paysoft-notify-queue',
       messages: notifyMessages,
       ackAll: vi.fn(),
       retryAll: vi.fn(),
-    }
+    } as unknown as MessageBatch<NotifyJobMessage>
 
     const mockDb = {
       prepare: vi.fn(() => ({

@@ -22,9 +22,7 @@ export async function traceIdMiddleware(c: Context, next: Next) {
   const start = Date.now();
   await next();
   const durationMs = Date.now() - start;
-
-  // Optional: log request access here
-  // log({ event: 'http.request', level: 'info', traceId, durationMs, meta: { method: c.req.method, url: c.req.url } });
+  c.header('X-Response-Time-Ms', String(durationMs));
 }
 
 export async function errorBoundaryMiddleware(err: Error, c: Context) {

@@ -1,9 +1,6 @@
 import type { Context, Next } from 'hono'
 import { validateSession } from '../auth/sessions'
 import type { AuthContext } from '../auth/rbac'
-
-const SESSION_COOKIE_NAME = 'session'
-
 import { createDb } from '../db/client'
 import { users } from '../db/schema'
 import { eq } from 'drizzle-orm'

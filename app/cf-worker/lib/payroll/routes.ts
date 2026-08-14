@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { executePayrollRun } from './engine'
 import { invalidateCache, CACHE_KEYS } from '../../cache/kv'
 import { RunPayrollSchema } from '../../security/schemas'
-import type { PayrollRunInput, PayrollRunStatus } from './types'
+import type { PayrollRunStatus } from './types'
 
 interface PayrollEnv {
   Bindings: {
@@ -88,10 +88,10 @@ payroll.post('/run', zValidator('json', RunPayrollSchema), async (c) => {
     ).bind('PAYROLL_RUN_STARTED', JSON.stringify({ runId }), 'SYSTEM', now).run()
 
     // Fetch approved tax declarations for employees
-    const employeeIds = input.employees.map(e => e.employeeId)
+    const employeeIds = (input.employees || []).map((e: any) => e.employeeId)
     const placeholders = employeeIds.map(() => '?').join(',')
     
-    let declarationsMap: Record<string, any> = {}
+    const declarationsMap: Record<string, any> = {}
     if (employeeIds.length > 0) {
       const { results: decs } = await c.env.DB.prepare(
         `SELECT employee_id, declarations_json FROM tax_declarations WHERE status = 'approved' AND employee_id IN (${placeholders})`
@@ -228,14 +228,14 @@ payroll.get('/run-progress/:runId', async (c) => {
   const res = await lockStub.fetch(new Request('https://lock/progress'))
   
   if (res.ok) {
-    const data = await res.json()
+    const data = (await res.json()) as Record<string, unknown>
     return c.json({
       runId,
       orgId: run.org_id,
       month: run.month,
       year: run.year,
       dbStatus: run.status,
-      ...data
+      ...data,
     })
   }
 
@@ -494,7 +494,9 @@ payroll.post('/adjustments', async (c) => {
     if (targetFrozen) {
       return c.json({ error: 'Target payroll month for adjustment is frozen and immutable' }, 409)
     }
-  } catch (_e) {}
+  } catch (_e) {
+    // Non-fatal if table not initialized in unit tests
+  }
 
   return c.json({
     success: true,

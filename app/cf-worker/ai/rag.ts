@@ -139,7 +139,7 @@ Provide clear bullet points, exact rupee amounts (using ₹), and cite relevant 
   const stream = new ReadableStream({
     async start(controller) {
       // Split response into readable token chunks
-      const tokens = responseText.split(/(?<=\s|[\.\,\n])/g)
+      const tokens = responseText.split(/(?<=\s|[.,\n])/g)
       for (const token of tokens) {
         if (!token) continue
         const sseData = `data: ${JSON.stringify({ response: token })}\n\n`
@@ -211,7 +211,7 @@ The exempt portion of House Rent Allowance (HRA) is the **lowest** of the follow
 
 - **Employee Share:** **12%** of Basic + Dearness Allowance (DA).
 - **Statutory Wage Ceiling:** **₹15,000 per month**.
-- **The ₹1,800 Cap:** For employees with basic pay above ₹15,000, the statutory mandatory minimum PF deduction is capped at **₹1,800/month** ($12\% \times ₹15,000$).
+- **The ₹1,800 Cap:** For employees with basic pay above ₹15,000, the statutory mandatory minimum PF deduction is capped at **₹1,800/month** (12% × ₹15,000).
 - **Employer Contribution Split (12%):**
   - **3.67%** goes to EPF Account 1 (₹550 on ₹15k).
   - **8.33%** goes to EPS (Pension Account 10), capped at **₹1,250/month**.

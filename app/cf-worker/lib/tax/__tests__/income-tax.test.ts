@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateGrossIncome, calculateHRAExemption, applySlabs, calculateIncomeTax } from '../income-tax';
-import type { SalaryStructure, TaxDeclarations, TaxCalculationInput } from '../types';
+import { calculateGrossIncome, calculateHRAExemption, calculateIncomeTax } from '../income-tax';
+import type { SalaryStructure, TaxCalculationInput } from '../types';
 
 describe('income-tax', () => {
   describe('calculateGrossIncome', () => {

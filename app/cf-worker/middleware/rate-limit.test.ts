@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Hono } from 'hono'
-import { rateLimiter, authLoginLimiter, payrollRunLimiter, generalApiLimiter } from './rate-limit'
+import { authLoginLimiter, payrollRunLimiter, generalApiLimiter } from './rate-limit'
 import type { KVNamespace } from '@cloudflare/workers-types'
 
 function createMockKV(): KVNamespace {

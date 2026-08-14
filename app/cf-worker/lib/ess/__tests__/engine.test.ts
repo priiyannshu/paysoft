@@ -57,7 +57,7 @@ describe('ESSEngine', () => {
   })
 
   it('applies leave successfully if balance is sufficient', async () => {
-    mockDb.prepare = vi.fn().mockImplementation((query: string) => {
+    mockDb.prepare = vi.fn().mockImplementation((_query: string) => {
       return {
         bind: vi.fn().mockReturnValue({
           first: vi.fn().mockResolvedValue({ balance: 10 }),
@@ -72,7 +72,7 @@ describe('ESSEngine', () => {
   })
 
   it('rejects leave application if balance is insufficient', async () => {
-    mockDb.prepare = vi.fn().mockImplementation((query: string) => {
+    mockDb.prepare = vi.fn().mockImplementation((_query: string) => {
       return {
         bind: vi.fn().mockReturnValue({
           first: vi.fn().mockResolvedValue({ balance: 1 }), // Only 1 day left

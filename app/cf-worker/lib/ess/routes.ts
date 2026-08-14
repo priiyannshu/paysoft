@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { ESSEngine } from './engine'
 import { simulateRegimes } from '../tax/engine'
-import { TaxCalculationInput, TaxDeclarations } from '../tax/types'
+import { TaxCalculationInput } from '../tax/types'
 import { ESSDeclarationSchema, LeaveApplicationSchema } from '../../security/schemas'
 
 export const ess = new Hono<{ Bindings: { DB: D1Database } }>()

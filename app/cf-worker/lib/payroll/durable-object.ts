@@ -277,7 +277,7 @@ export class PayrollRunLock implements DurableObject {
 
     // Sync progress stage when lifecycle reaches computed or frozen
     if (this.progress) {
-      if (nextStatus === 'computed' || nextStatus === 'approved' || nextStatus === 'frozen') {
+      if (nextStatus === 'computed' || nextStatus === 'frozen') {
         this.progress.currentStage = 'completed'
         this.progress.percentComplete = 100
         this.progress.updatedAt = new Date().toISOString()

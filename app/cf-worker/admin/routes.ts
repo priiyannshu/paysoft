@@ -53,7 +53,9 @@ adminRoutes.post('/locks/force-release', async (c) => {
       `UPDATE payroll_runs SET status = 'failed', updated_at = unixepoch()
        WHERE org_id = ? AND year = ? AND month = ? AND status = 'processing'`
     ).bind(orgId, year, month).run()
-  } catch (_e) {}
+  } catch (_e) {
+    // Non-fatal if table not initialized
+  }
 
   // Log critical incident action in audit trail
   try {
@@ -72,7 +74,9 @@ adminRoutes.post('/locks/force-release', async (c) => {
       `Emergency force release executed for DO lock (${lockKey}). Reason: ${reason || 'Manual administrative override'}`,
       JSON.stringify({ lockKey, reason, doResult, actorId })
     ).run()
-  } catch (_e) {}
+  } catch (_e) {
+    // Non-fatal if audit_logs table not initialized
+  }
 
   return c.json({
     ok: true,

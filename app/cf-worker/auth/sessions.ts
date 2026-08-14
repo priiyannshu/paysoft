@@ -1,7 +1,7 @@
 import { createLucia } from './lucia'
 import { createSession, updateSessionExpiration } from '../db/repositories'
 import { createDb } from '../db/client'
-import { getCached, setCache, invalidateCache, CACHE_KEYS, CACHE_TTLS } from '../cache/kv'
+import { setCache, invalidateCache, CACHE_KEYS, CACHE_TTLS } from '../cache/kv'
 import type { KVNamespace } from '@cloudflare/workers-types'
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7 // 7 days
@@ -20,7 +20,7 @@ export async function createUserSession(
   d1: D1Database,
   userId: string,
   orgId: string,
-  kv?: KVNamespace
+  _kv?: KVNamespace
 ): Promise<string> {
   const db = createDb(d1)
   const lucia = createLucia(d1)
@@ -112,7 +112,7 @@ export async function revokeSession(
 export async function revokeAllUserSessions(
   d1: D1Database,
   userId: string,
-  kv?: KVNamespace
+  _kv?: KVNamespace
 ): Promise<void> {
   const lucia = createLucia(d1)
   await lucia.invalidateUserSessions(userId)

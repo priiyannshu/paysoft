@@ -58,7 +58,7 @@ function createMockDB() {
   return {
     prepare: vi.fn((sqlStr: string) => {
       return {
-        bind: vi.fn((...args: any[]) => ({
+        bind: vi.fn((..._args: any[]) => ({
           all: vi.fn(async () => {
             if (sqlStr.includes('FROM employees')) {
               return { results: tableData.employees }
