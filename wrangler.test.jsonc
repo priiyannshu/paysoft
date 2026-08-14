@@ -69,5 +69,8 @@
 				"max_retries": 3
 			}
 		]
+	},
+	"triggers": {
+		"crons": ["0 2 * * *"]
 	}
 }

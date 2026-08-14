@@ -70,7 +70,10 @@ export class PayrollRunLock implements DurableObject {
     if (request.method === 'POST' && path === '/acquire') {
       return this.acquire(request)
     }
-    if (request.method === 'POST' && path === '/release') {
+    if (request.method === 'POST' && (path === '/release' || path === '/force-release')) {
+      if (path === '/force-release') {
+        return this.forceRelease()
+      }
       return this.release()
     }
     if (request.method === 'GET' && (path === '/status' || path === '/progress')) {
@@ -87,6 +90,18 @@ export class PayrollRunLock implements DurableObject {
   }
 
   private async acquire(request: Request): Promise<Response> {
+    if (this.lock.status === 'frozen') {
+      return Response.json(
+        {
+          error: 'Month is frozen and immutable',
+          status: 'frozen',
+          runId: this.lock.runId,
+          progress: this.progress,
+        },
+        { status: 409 }
+      )
+    }
+
     if (this.lock.held) {
       return Response.json(
         {
@@ -142,15 +157,32 @@ export class PayrollRunLock implements DurableObject {
   }
 
   private async release(): Promise<Response> {
-    if (!this.lock.held) {
+    if (!this.lock.held && this.lock.status !== 'frozen') {
       return Response.json({ error: 'No lock held' }, { status: 400 })
     }
 
     const releasedRunId = this.lock.runId
-    this.lock = { ...EMPTY_STATE, progress: this.progress }
+    const currentStatus = this.lock.status
+    this.lock = {
+      ...EMPTY_STATE,
+      status: currentStatus === 'frozen' ? 'frozen' : null,
+      progress: this.progress,
+    }
     await this.state.storage.put('lock', this.lock)
 
     return Response.json({ released: true, runId: releasedRunId, progress: this.progress })
+  }
+
+  private async forceRelease(): Promise<Response> {
+    const previous = { ...this.lock }
+    this.lock = { ...EMPTY_STATE, progress: null }
+    await this.state.storage.put('lock', this.lock)
+    await this.state.storage.delete('progress')
+    return Response.json({
+      forceReleased: true,
+      previousRunId: previous.runId,
+      previousStatus: previous.status,
+    })
   }
 
   private getProgressAndStatus(): Response {

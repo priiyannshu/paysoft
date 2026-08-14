@@ -16,6 +16,7 @@ import { adminRoutes } from './admin/routes'
 import { aiRoutes } from './ai/routes'
 import { handlePayslipQueue } from './queues/payslip-consumer'
 import { handleNotifyQueue } from './queues/notify-consumer'
+import { handleScheduledBackup } from './crons/backup'
 import { PayrollRunLock } from './lib/payroll/durable-object'
 import type { KVNamespace } from '@cloudflare/workers-types'
 
@@ -54,7 +55,7 @@ app.use('/api/payroll/run', payrollRunLimiter)
 app.use('/api/*', generalApiLimiter)
 
 app.get('/api/health', (c) => {
-  return c.json({ ok: true, version: '2.0.0', stage: 'phase-6-8-caching-rate-limiting' })
+  return c.json({ ok: true, version: '2.0.0', stage: 'phase-10-11-availability-scaling' })
 })
 
 app.route('/auth', authRoutes)
@@ -72,6 +73,9 @@ app.route('/docs', docs)
 
 export default {
   fetch: app.fetch,
+  async scheduled(event: any, env: Env, ctx: any): Promise<void> {
+    await handleScheduledBackup(event, env, ctx)
+  },
   async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
     const queueName = batch.queue || ''
 

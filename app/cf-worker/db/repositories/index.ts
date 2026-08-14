@@ -193,12 +193,37 @@ export function getEmployeeSalaryHistory(
     .all()
 }
 
-export function updateSalaryRecordStatus(
+export async function updateSalaryRecord(
+  db: Db,
+  orgId: string,
+  id: string,
+  data: Partial<typeof salaryRecords.$inferInsert>,
+) {
+  const existing = await getSalaryRecord(db, orgId, id)
+  if (!existing) {
+    throw new Error('Salary record not found')
+  }
+  if (existing.status === 'frozen') {
+    throw new Error('Salary record is frozen and immutable')
+  }
+  return db
+    .update(salaryRecords)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(salaryRecords.id, id), eq(salaryRecords.orgId, orgId)))
+    .returning()
+    .get()
+}
+
+export async function updateSalaryRecordStatus(
   db: Db,
   orgId: string,
   id: string,
   status: string,
 ) {
+  const existing = await getSalaryRecord(db, orgId, id)
+  if (existing && existing.status === 'frozen' && status !== 'frozen') {
+    throw new Error('Cannot modify or unfreeze a frozen salary record')
+  }
   const extra: Record<string, unknown> = { status, updatedAt: new Date() }
   if (status === 'frozen') {
     extra.frozenAt = new Date()
