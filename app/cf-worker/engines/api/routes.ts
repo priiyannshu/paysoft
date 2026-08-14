@@ -1,4 +1,6 @@
 import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { CreateEmployeeSchema } from '../../security/schemas'
 import { eq, and, sql, desc, asc, like, or } from 'drizzle-orm'
 import { createDb } from '../../db/client'
 import {
@@ -217,11 +219,11 @@ apiRoutes.get('/employees/:id', async (c) => {
   })
 })
 
-apiRoutes.put('/employees/:id', async (c) => {
+apiRoutes.put('/employees/:id', zValidator('json', CreateEmployeeSchema), async (c) => {
   const orgId = getOrgId(c)
   const id = c.req.param('id')
   const db = createDb(c.env.DB)
-  const body = await c.req.json()
+  const body = c.req.valid('json') as any
 
   const existing = await db.select().from(employees)
     .where(and(eq(employees.id, id), eq(employees.orgId, orgId)))

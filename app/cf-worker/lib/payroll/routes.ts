@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
 import { executePayrollRun } from './engine'
 import { invalidateCache, CACHE_KEYS } from '../../cache/kv'
+import { RunPayrollSchema } from '../../security/schemas'
 import type { PayrollRunInput, PayrollRunStatus } from './types'
 
 interface PayrollEnv {
@@ -24,8 +26,8 @@ const payroll = new Hono<PayrollEnv>()
  * 5. Transition lock: processing → computed (stage: 'completed', percent: 100)
  * 6. Release lock
  */
-payroll.post('/run', async (c) => {
-  const input = await c.req.json<PayrollRunInput>()
+payroll.post('/run', zValidator('json', RunPayrollSchema), async (c) => {
+  const input = c.req.valid('json') as any
   const { orgId, month, year } = input
   const totalEmployees = input.employees?.length || 0
 

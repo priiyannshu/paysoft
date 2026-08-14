@@ -20,12 +20,7 @@ adminRoutes.use('*', requireRole('super_admin', 'hr_lead'))
  * Purges KV cache keys by explicit key, prefix, orgId, or clears all cache tiers.
  */
 adminRoutes.post('/cache/purge', async (c) => {
-  const body = await c.req.json<{
-    key?: string
-    prefix?: string
-    orgId?: string
-    all?: boolean
-  }>().catch(() => ({}))
+  const body = await c.req.json<any>().catch(() => ({} as any))
 
   const { key, prefix, orgId, all } = body
   let purgedCount = 0
@@ -101,4 +96,47 @@ adminRoutes.get('/cache/status', async (c) => {
       tier4_d1: 'Cloudflare D1 Database',
     },
   })
+})
+
+/**
+ * GET /api/admin/audit-logs
+ *
+ * Exposes audit logs with filtering for the Admin Audit Viewer UI.
+ */
+adminRoutes.get('/audit-logs', async (c) => {
+  const auth = c.get('auth') as any
+  const orgId = auth?.orgId || c.req.query('orgId') || 'org_demo_001'
+  
+  const eventType = c.req.query('eventType')
+  const startDate = c.req.query('startDate')
+  const endDate = c.req.query('endDate')
+  const userId = c.req.query('userId')
+  const limit = parseInt(c.req.query('limit') || '50', 10)
+  const offset = parseInt(c.req.query('offset') || '0', 10)
+
+  let query = `SELECT * FROM audit_logs WHERE org_id = ?`
+  const params: any[] = [orgId]
+
+  if (eventType) {
+    query += ` AND action = ?` 
+    params.push(eventType)
+  }
+  if (userId) {
+    query += ` AND actor_id = ?`
+    params.push(userId)
+  }
+  if (startDate) {
+    query += ` AND created_at >= ?`
+    params.push(startDate)
+  }
+  if (endDate) {
+    query += ` AND created_at <= ?`
+    params.push(endDate)
+  }
+
+  query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  params.push(limit, offset)
+
+  const { results } = await c.env.DB.prepare(query).bind(...params).all()
+  return c.json({ data: results, limit, offset })
 })

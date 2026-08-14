@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { authMiddleware } from './middleware/org-id'
 import { cacheControlMiddleware } from './middleware/cache-control'
+import { securityHeadersMiddleware } from './security/headers'
+import { traceIdMiddleware, errorBoundaryMiddleware } from './lib/logging'
 import { authLoginLimiter, payrollRunLimiter, generalApiLimiter } from './middleware/rate-limit'
 import { authRoutes } from './engines/1-auth/routes'
 import { tax } from './lib/tax/routes'
@@ -32,6 +34,13 @@ interface Env {
 }
 
 const app = new Hono<{ Bindings: Env }>()
+
+// Global error boundary
+app.onError(errorBoundaryMiddleware)
+
+// 0. Security and Tracing
+app.use('*', traceIdMiddleware)
+app.use('*', securityHeadersMiddleware)
 
 // 1. Global Cache-Control header strategy middleware
 app.use('*', cacheControlMiddleware)

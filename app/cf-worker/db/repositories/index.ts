@@ -64,7 +64,19 @@ export function createEmployee(
   orgId: string,
   data: Omit<typeof employees.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(employees).values({ ...data, orgId }).returning().get()
+  return db.insert(employees).values({ ...data, orgId }).returning().get().then((result: any) => {
+    if (result) {
+      createAuditLog(db, orgId, {
+        action: 'employee.created',
+        entityType: 'employee',
+        entityId: result.id,
+        metadata: JSON.stringify(data),
+        actorId: 'system',
+        message: 'Employee created',
+      })
+    }
+    return result
+  })
 }
 
 export function getEmployee(db: Db, orgId: string, id: string) {
@@ -110,7 +122,19 @@ export function updateEmployee(
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(employees.id, id), eq(employees.orgId, orgId)))
     .returning()
-    .get()
+    .get().then((result: any) => {
+      if (result) {
+        createAuditLog(db, orgId, {
+          action: 'employee.updated',
+          entityType: 'employee',
+          entityId: id,
+          metadata: JSON.stringify(data),
+          actorId: 'system',
+          message: 'Employee updated',
+        })
+      }
+      return result
+    })
 }
 
 // ─── salary_records ──────────────────────────────────────────────────────────
@@ -204,7 +228,19 @@ export function setConfiguration(
       set: { value, description, updatedAt: new Date() },
     })
     .returning()
-    .get()
+    .get().then((result: any) => {
+      if (result) {
+        createAuditLog(db, orgId, {
+          action: 'config.updated',
+          entityType: 'configuration',
+          entityId: key,
+          metadata: JSON.stringify({ key, value }),
+          actorId: 'system',
+          message: 'Configuration updated',
+        })
+      }
+      return result
+    })
 }
 
 export function getConfiguration(db: Db, orgId: string, key: string) {
@@ -261,7 +297,19 @@ export function createDeclaration(
   orgId: string,
   data: Omit<typeof declarations.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(declarations).values({ ...data, orgId }).returning().get()
+  return db.insert(declarations).values({ ...data, orgId }).returning().get().then((result: any) => {
+    if (result) {
+      createAuditLog(db, orgId, {
+        action: 'declaration.submitted',
+        entityType: 'declaration',
+        entityId: result.id,
+        metadata: JSON.stringify(data),
+        actorId: data.employeeId,
+        message: 'Declaration submitted',
+      })
+    }
+    return result
+  })
 }
 
 export function getDeclaration(db: Db, orgId: string, id: string) {
@@ -314,7 +362,19 @@ export function updateDeclarationStatus(
     })
     .where(and(eq(declarations.id, id), eq(declarations.orgId, orgId)))
     .returning()
-    .get()
+    .get().then((result: any) => {
+      if (result) {
+        createAuditLog(db, orgId, {
+          action: `declaration.${status}`,
+          entityType: 'declaration',
+          entityId: id,
+          metadata: JSON.stringify({ status, approvedAmount, remarks }),
+          actorId: reviewedBy,
+          message: `Declaration ${status}`,
+        })
+      }
+      return result
+    })
 }
 
 // ─── leave_records ───────────────────────────────────────────────────────────
@@ -324,7 +384,19 @@ export function createLeaveRecord(
   orgId: string,
   data: Omit<typeof leaveRecords.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(leaveRecords).values({ ...data, orgId }).returning().get()
+  return db.insert(leaveRecords).values({ ...data, orgId }).returning().get().then((result: any) => {
+    if (result) {
+      createAuditLog(db, orgId, {
+        action: 'leave.submitted',
+        entityType: 'leaveRecord',
+        entityId: result.id,
+        metadata: JSON.stringify(data),
+        actorId: data.employeeId,
+        message: 'Leave submitted',
+      })
+    }
+    return result
+  })
 }
 
 export function getLeaveRecord(db: Db, orgId: string, id: string) {
@@ -373,7 +445,19 @@ export function updateLeaveStatus(
     })
     .where(and(eq(leaveRecords.id, id), eq(leaveRecords.orgId, orgId)))
     .returning()
-    .get()
+    .get().then((result: any) => {
+      if (result) {
+        createAuditLog(db, orgId, {
+          action: `leave.${status}`,
+          entityType: 'leaveRecord',
+          entityId: id,
+          metadata: JSON.stringify({ status }),
+          actorId: approvedBy,
+          message: `Leave ${status}`,
+        })
+      }
+      return result
+    })
 }
 
 // ─── users ───────────────────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { LoginSchema } from '../../security/schemas'
+import { verifyTurnstileToken } from '../../security/turnstile'
 import { eq } from 'drizzle-orm'
 import { verifyPassword } from '../../auth/password'
 import { createDb } from '../../db/client'
@@ -7,22 +9,19 @@ import { users, organizations } from '../../db/schema'
 import { createUserSession, validateSession, revokeSession } from '../../auth/sessions'
 import { getAuth } from '../../middleware/org-id'
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-  orgCode: z.string().min(1),
-})
-
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
-authRoutes.post('/login', async (c) => {
-  const body = await c.req.json()
-  const result = loginSchema.safeParse(body)
-  if (!result.success) {
-    return c.json({ error: 'Validation failed', details: result.error.flatten() }, 400)
-  }
+authRoutes.post('/login', zValidator('json', LoginSchema), async (c) => {
+  const { email, password, orgCode, turnstileToken } = c.req.valid('json')
 
-  const { email, password, orgCode } = result.data
+  // We check for TURNSTILE_SECRET environment variable in the env.
+  // If not present, we can default to 'dummy_secret' for local dev.
+  const turnstileSecret = c.env.TURNSTILE_SECRET || 'dummy_secret'
+  const tokenValid = await verifyTurnstileToken(turnstileSecret, turnstileToken || '', c.req.header('CF-Connecting-IP'))
+  
+  if (!tokenValid) {
+    return c.json({ error: 'Turnstile verification failed' }, 400)
+  }
   const db = createDb(c.env.DB)
 
   const org = await db.select().from(organizations)

@@ -14,6 +14,7 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('Password123!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
 
   const getPersonaRole = (emailAddr: string): { role: string; name: string; code: string } => {
     if (emailAddr.includes('hr')) {
@@ -37,6 +38,7 @@ export const LoginView: React.FC = () => {
       orgCode,
       email,
       password,
+      turnstileToken,
     };
 
     const targetPersona = getPersonaRole(payload.email);
@@ -93,8 +95,25 @@ export const LoginView: React.FC = () => {
       orgCode: 'DEMO',
       email: demoEmail,
       password: 'Password123!',
+      turnstileToken: 'TEST_PASS_TOKEN',
     });
   };
+
+  React.useEffect(() => {
+    // Expose callback for Turnstile
+    (window as any).onTurnstileSuccess = (token: string) => {
+      setTurnstileToken(token);
+    };
+
+    // Load Turnstile script if not already loaded
+    if (!document.querySelector('script[src*="turnstile/v0/api.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -169,6 +188,8 @@ export const LoginView: React.FC = () => {
                 <span>Protected by Enterprise Security</span>
               </div>
             </div>
+
+            <div className="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-callback="onTurnstileSuccess"></div>
 
             <button
               type="submit"
