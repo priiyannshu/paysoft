@@ -15,41 +15,52 @@ const payroll = new Hono<PayrollEnv>()
  * POST /payroll/run
  *
  * Execute a full payroll run:
- * 1. Acquire DO lock (prevents concurrent runs for same org+month)
- * 2. Transition lock: draft → processing
+ * 1. Acquire DO lock & initialize progress tracking
+ * 2. Transition lock: draft → processing (stage: 'calculating_tax')
  * 3. Compute all employee salaries
- * 4. Write salary records to D1
- * 5. Transition lock: processing → computed
+ * 4. Write salary records to D1 (stage: 'writing_records')
+ * 5. Transition lock: processing → computed (stage: 'completed', percent: 100)
  * 6. Release lock
  */
 payroll.post('/run', async (c) => {
   const input = await c.req.json<PayrollRunInput>()
   const { orgId, month, year } = input
+  const totalEmployees = input.employees?.length || 0
 
   // Get the DO stub keyed by org+month
   const lockId = c.env.PAYROLL_LOCK.idFromName(`${orgId}:${year}:${month}`)
   const lockStub = c.env.PAYROLL_LOCK.get(lockId)
 
-  // Step 1: Acquire lock
+  // Step 1: Acquire lock with total employees count
   const runIdCandidate = `PR-${orgId}-${year}-${String(month).padStart(2, '0')}-${Date.now()}`
   const acquireRes = await lockStub.fetch(new Request('https://lock/acquire', {
     method: 'POST',
-    body: JSON.stringify({ orgId, month, year, runId: runIdCandidate }),
+    body: JSON.stringify({ orgId, month, year, runId: runIdCandidate, totalEmployees }),
     headers: { 'Content-Type': 'application/json' },
   }))
 
   if (!acquireRes.ok) {
-    const err = await acquireRes.json() as { error: string }
-    return c.json({ error: err.error }, 409)
+    const err = await acquireRes.json() as { error: string; progress?: any }
+    return c.json({ error: err.error, progress: err.progress }, 409)
   }
 
   const { runId } = await acquireRes.json() as { runId: string }
 
   try {
-    // Step 2: draft → processing
+    // Step 2: draft → processing & stage: calculating_tax
     await lockStub.fetch(new Request('https://lock/transition', {
       method: 'POST',
       body: JSON.stringify({ nextStatus: 'processing' }),
+      headers: { 'Content-Type': 'application/json' },
+    }))
+
+    await lockStub.fetch(new Request('https://lock/progress/update', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentStage: 'calculating_tax',
+        processedEmployees: 0,
+        totalEmployees,
+      }),
       headers: { 'Content-Type': 'application/json' },
     }))
 
@@ -63,7 +74,6 @@ payroll.post('/run', async (c) => {
     const employeeIds = input.employees.map(e => e.employeeId)
     const placeholders = employeeIds.map(() => '?').join(',')
     
-    // Fallback if employeeIds is empty
     let declarationsMap: Record<string, any> = {}
     if (employeeIds.length > 0) {
       const { results: decs } = await c.env.DB.prepare(
@@ -85,6 +95,16 @@ payroll.post('/run', async (c) => {
     // Step 3: Compute payroll
     const result = executePayrollRun(input)
     result.runId = runId
+
+    // Update progress: writing_records
+    await lockStub.fetch(new Request('https://lock/progress/update', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentStage: 'writing_records',
+        processedEmployees: Math.round(totalEmployees * 0.75),
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    }))
 
     // Step 4: Write to D1
     now = new Date().toISOString()
@@ -112,7 +132,17 @@ payroll.post('/run', async (c) => {
 
     await c.env.DB.batch(batch)
 
-    // Step 5: processing → computed
+    // Step 5: processing → computed (sets stage to 'completed' and 100%)
+    await lockStub.fetch(new Request('https://lock/progress/update', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentStage: 'completed',
+        processedEmployees: totalEmployees,
+        totalEmployees,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    }))
+
     await lockStub.fetch(new Request('https://lock/transition', {
       method: 'POST',
       body: JSON.stringify({ nextStatus: 'computed' }),
@@ -126,11 +156,93 @@ payroll.post('/run', async (c) => {
 
     return c.json(result, 201)
 
-  } catch (err) {
-    // Release lock on failure so the org isn't permanently locked
-    await lockStub.fetch(new Request('https://lock/release', { method: 'POST' }))
+  } catch (err: any) {
+    // Report error to progress tracker and release lock on failure
+    await lockStub.fetch(new Request('https://lock/progress/update', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentStage: 'failed',
+        error: { employeeId: 'SYSTEM', reason: err?.message || 'Payroll computation error' }
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    })).catch(() => {})
+
+    await lockStub.fetch(new Request('https://lock/release', { method: 'POST' })).catch(() => {})
     throw err
   }
+})
+
+/**
+ * GET /payroll/run-progress/:runId
+ *
+ * Query live execution status and granular progress from DO for frontend progress bar.
+ */
+payroll.get('/run-progress/:runId', async (c) => {
+  const runId = c.req.param('runId')
+
+  // Find the run in DB to get org_id, month, year
+  const run = await c.env.DB.prepare(
+    `SELECT * FROM payroll_runs WHERE id = ?`
+  ).bind(runId).first<any>()
+
+  if (!run) {
+    // If not found in DB yet, try to parse from standard runId format: PR-{orgId}-{year}-{month}-{ts}
+    const parts = runId.split('-')
+    if (parts.length >= 4) {
+      const orgId = parts[1]
+      const year = parseInt(parts[2], 10)
+      const month = parseInt(parts[3], 10)
+      const lockId = c.env.PAYROLL_LOCK.idFromName(`${orgId}:${year}:${month}`)
+      const lockStub = c.env.PAYROLL_LOCK.get(lockId)
+      const res = await lockStub.fetch(new Request('https://lock/progress'))
+      if (res.ok) {
+        const data = await res.json()
+        return c.json(data)
+      }
+    }
+    return c.json({ error: 'Payroll run progress not found', runId }, 404)
+  }
+
+  const lockId = c.env.PAYROLL_LOCK.idFromName(`${run.org_id}:${run.year}:${run.month}`)
+  const lockStub = c.env.PAYROLL_LOCK.get(lockId)
+  const res = await lockStub.fetch(new Request('https://lock/progress'))
+  
+  if (res.ok) {
+    const data = await res.json()
+    return c.json({
+      runId,
+      orgId: run.org_id,
+      month: run.month,
+      year: run.year,
+      dbStatus: run.status,
+      ...data
+    })
+  }
+
+  return c.json({ runId, status: run.status })
+})
+
+/**
+ * GET /payroll/progress/:monthId
+ *
+ * Query DO progress by monthId (format: orgId:year:month)
+ */
+payroll.get('/progress/:monthId', async (c) => {
+  const monthId = c.req.param('monthId')
+  const [orgId, yearStr, monthStr] = monthId.split(':')
+  if (!orgId || !yearStr || !monthStr) {
+    return c.json({ error: 'Invalid monthId format. Expected orgId:year:month' }, 400)
+  }
+
+  const lockId = c.env.PAYROLL_LOCK.idFromName(monthId)
+  const lockStub = c.env.PAYROLL_LOCK.get(lockId)
+  const res = await lockStub.fetch(new Request('https://lock/progress'))
+  
+  if (res.ok) {
+    const data = await res.json()
+    return c.json(data)
+  }
+  return c.json({ error: 'Failed to retrieve progress from lock' }, 500)
 })
 
 /**

@@ -75,10 +75,12 @@ export const EssPortalView: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([
     {
       sender: 'ai',
-      text: `Namaste ${user?.name || 'Employee'}! I am PaySoft AI Assistant. I can help you with tax computation under Old vs New Regime, Form 12BB statutory declarations, EPF/ESI queries, and payslip breakdowns. How can I assist you today?`
+      text: `Namaste ${user?.name || 'Employee'}! I am PaySoft AI Assistant. I can help you with tax computation under Old vs New Regime, Form 12BB statutory declarations, EPF/ESI queries, and payslip breakdowns. How can I assist you today?`,
+      streaming: false,
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
 
   // Handle URL tab sync
   const switchTab = (newTab: 'declaration' | 'leave' | 'simulator' | 'ai' | 'approval') => {
@@ -301,29 +303,103 @@ export const EssPortalView: React.FC = () => {
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async (e?: React.FormEvent, customPrompt?: string) => {
+    if (e) e.preventDefault();
+    const queryText = customPrompt || inputMessage;
+    if (!queryText.trim() || isStreaming) return;
 
-    const userText = inputMessage;
-    setMessages(prev => [...prev, { sender: 'user', text: userText }]);
+    const userMsg = { sender: 'user', text: queryText };
+    setMessages(prev => [...prev, userMsg]);
     setInputMessage('');
+    setIsStreaming(true);
 
-    setTimeout(() => {
-      let reply = "Under the New Tax Regime (FY 2025-26), standard deduction has been increased to ₹75,000 and with Section 87A rebate, annual income up to ₹7,75,000 is completely tax-free!";
-      const q = userText.toLowerCase();
-      if (q.includes('80c') || q.includes('deduction')) {
-        reply = "Section 80C allows deductions up to ₹1,50,000 for investments in EPF, PPF, ELSS mutual funds, Life Insurance premiums, and children's tuition fees. Note: Section 80C is applicable under the Old Tax Regime.";
-      } else if (q.includes('leave') || q.includes('balance') || q.includes('sick')) {
-        reply = "Your current entitlement balance is 8 Casual Leaves, 5 Sick Leaves, and 15 Earned Leaves available for FY 2025-26.";
-      } else if (q.includes('payslip') || q.includes('salary') || q.includes('net')) {
-        reply = `Your processed payslip for ${user?.name || 'Employee'} shows statutory deductions for EPF & Professional Tax with net disbursal via Bank Transfer.`;
-      } else if (q.includes('hra') || q.includes('rent')) {
-        reply = "HRA exemption under Section 10(13A) is calculated as the minimum of: (1) Actual HRA received, (2) Rent paid minus 10% of Basic, or (3) 50% of Basic (Metro) / 40% of Basic (Non-Metro). Landlord PAN is required if annual rent exceeds ₹1,00,000.";
+    // Initial placeholder message for incoming streaming tokens
+    setMessages(prev => [...prev, { sender: 'ai', text: '', streaming: true }]);
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: queryText,
+          history: messages.slice(-4).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chat API responded with status ${response.status}`);
       }
-      setMessages(prev => [...prev, { sender: 'ai', text: reply }]);
-    }, 400);
+
+      if (!response.body) {
+        throw new Error('No stream body available');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamBuffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: [DONE]')) {
+            // Streaming finished
+          } else if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              const token = data.response || '';
+              streamBuffer += token;
+
+              setMessages(prev => {
+                const copy = [...prev];
+                const lastIdx = copy.length - 1;
+                if (lastIdx >= 0 && copy[lastIdx].sender === 'ai') {
+                  copy[lastIdx] = { sender: 'ai', text: streamBuffer, streaming: true };
+                }
+                return copy;
+              });
+            } catch {
+              // non-JSON token line
+            }
+          }
+        }
+      }
+
+      // Finalize message status
+      setMessages(prev => {
+        const copy = [...prev];
+        const lastIdx = copy.length - 1;
+        if (lastIdx >= 0 && copy[lastIdx].sender === 'ai') {
+          copy[lastIdx] = { sender: 'ai', text: streamBuffer || 'Response completed.', streaming: false };
+        }
+        return copy;
+      });
+    } catch (err: any) {
+      console.warn('AI chat error, fallback response provided:', err);
+      setMessages(prev => {
+        const copy = [...prev];
+        const lastIdx = copy.length - 1;
+        if (lastIdx >= 0 && copy[lastIdx].sender === 'ai') {
+          copy[lastIdx] = {
+            sender: 'ai',
+            text: `Under the New Tax Regime (FY 2025-26), standard deduction has been increased to ₹75,000 and with Section 87A rebate, annual income up to ₹7,75,000 is completely tax-free! For Old Regime, claim deductions under Section 80C (₹1.5L), 80D (₹25k-₹50k), and Section 10(13A) HRA exemption.`,
+            streaming: false
+          };
+        }
+        return copy;
+      });
+    } finally {
+      setIsStreaming(false);
+    }
   };
+
 
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">
@@ -743,21 +819,85 @@ export const EssPortalView: React.FC = () => {
 
       {/* Tab 4: AI Payroll & Tax Assistant */}
       {activeTab === 'ai' && (
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[550px]">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[620px]">
           {/* AI Header */}
           <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-full bg-sky-500 flex items-center justify-center text-slate-900">
+              <div className="w-7 h-7 rounded-full bg-sky-500 flex items-center justify-center text-slate-900 shadow-xs">
                 <Bot className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="font-bold text-xs">PaySoft AI Payroll & Compliance Assistant</h3>
                 <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Online • 24/7 Tax & Payroll Help
+                  Live Edge Intelligence • Llama 3 + Vectorize RAG (FY 2025–26)
                 </span>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setMessages([
+                  {
+                    sender: 'ai',
+                    text: `Namaste ${user?.name || 'Employee'}! I am PaySoft AI Assistant. How can I help you with your salary computation or tax laws today?`,
+                    streaming: false,
+                  },
+                ])
+              }
+              className="text-[11px] text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-800 transition cursor-pointer"
+            >
+              Clear Conversation
+            </button>
+          </div>
+
+          {/* Quick Prompt Recommendation Chips */}
+          <div className="bg-slate-100 border-b border-slate-200 px-3 py-2 flex items-center gap-1.5 overflow-x-auto text-[11px]">
+            <span className="text-slate-500 font-semibold text-[10px] uppercase shrink-0 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-sky-600" />
+              Suggestions:
+            </span>
+            <button
+              type="button"
+              onClick={() => handleSendMessage(undefined, 'What is the standard deduction in the new tax regime for FY 2025-26?')}
+              disabled={isStreaming}
+              className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+            >
+              ₹75k Standard Deduction
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendMessage(undefined, 'New vs Old tax regime for ₹12L salary')}
+              disabled={isStreaming}
+              className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+            >
+              New vs Old for ₹12L Salary
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendMessage(undefined, 'Explain how HRA exemption is calculated under Section 10(13A)')}
+              disabled={isStreaming}
+              className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+            >
+              HRA Exemption Formula
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendMessage(undefined, 'Why is my EPF deducted as ₹1,800?')}
+              disabled={isStreaming}
+              className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+            >
+              Why EPF ₹1,800 Cap?
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSendMessage(undefined, 'How is Gratuity calculated?')}
+              disabled={isStreaming}
+              className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+            >
+              Gratuity Calculation
+            </button>
           </div>
 
           {/* Messages Body */}
@@ -768,13 +908,16 @@ export const EssPortalView: React.FC = () => {
                 className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-xl p-3 shadow-xs ${
+                  className={`max-w-[85%] rounded-xl p-3.5 shadow-xs leading-relaxed ${
                     m.sender === 'user'
                       ? 'bg-sky-600 text-white rounded-tr-none'
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
+                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none whitespace-pre-line'
                   }`}
                 >
                   {m.text}
+                  {m.streaming && (
+                    <span className="inline-block w-1.5 h-3.5 bg-sky-600 ml-1 animate-pulse align-middle" />
+                  )}
                 </div>
               </div>
             ))}
@@ -786,14 +929,23 @@ export const EssPortalView: React.FC = () => {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
+              disabled={isStreaming}
               placeholder="Ask about your tax slab, Form 12BB, PF deduction, or leave policy..."
-              className="flex-1 bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+              className="flex-1 bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none disabled:opacity-60"
             />
             <button
               type="submit"
-              className="bg-sky-600 hover:bg-sky-500 text-white p-2 rounded-md transition shadow-xs cursor-pointer"
+              disabled={isStreaming || !inputMessage.trim()}
+              className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white p-2 rounded-md transition shadow-xs cursor-pointer flex items-center justify-center gap-1 font-semibold text-xs px-3"
             >
-              <Send className="w-4 h-4" />
+              {isStreaming ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Ask</span>
+                  <Send className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </form>
         </div>

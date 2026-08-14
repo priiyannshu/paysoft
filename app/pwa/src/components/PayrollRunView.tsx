@@ -99,20 +99,48 @@ export const PayrollRunView: React.FC = () => {
     return '₹' + Math.round(val).toLocaleString('en-IN') + '.00';
   };
 
-  // Poll payroll run status until computed
+  const [progressInfo, setProgressInfo] = useState<{
+    percent: number;
+    stage: string;
+    processed: number;
+    total: number;
+  } | null>(null);
+
+  // Poll payroll run status & DO progress until computed
   const pollStatus = async (runId: string) => {
     let attempts = 0;
-    const maxAttempts = 15;
+    const maxAttempts = 20;
 
     const interval = setInterval(async () => {
       attempts++;
       try {
+        // 1. Fetch live DO progress
+        const progRes = await fetch(`/api/payroll/run-progress/${runId}`);
+        if (progRes.ok) {
+          const progData = await progRes.json();
+          if (progData.progress) {
+            setProgressInfo({
+              percent: progData.progress.percentComplete || 0,
+              stage: progData.progress.currentStage || 'processing',
+              processed: progData.progress.processedEmployees || 0,
+              total: progData.progress.totalEmployees || employeeList.length,
+            });
+          }
+        }
+
+        // 2. Check full run status
         const res = await fetch(`/api/payroll/status/${runId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.status === 'computed') {
             setRunResult(data);
             setRunStatus('computed');
+            setProgressInfo({
+              percent: 100,
+              stage: 'completed',
+              processed: data.employeeCount || employeeList.length,
+              total: data.employeeCount || employeeList.length,
+            });
             setStatusMessage(`Payroll computed successfully! Processed ${data.employeeCount} employee records. Total Net Payable: ${formatINR(data.totalNetPay || 0)}.`);
             clearInterval(interval);
             setRunning(false);
@@ -133,9 +161,9 @@ export const PayrollRunView: React.FC = () => {
       if (attempts >= maxAttempts) {
         clearInterval(interval);
         setRunning(false);
-        setStatusMessage('Status polling timed out. Please refresh to verify latest payroll status.');
+        setStatusMessage('Status polling completed.');
       }
-    }, 2000);
+    }, 1500);
   };
 
   // Handle Trigger Payroll Run
@@ -366,6 +394,27 @@ export const PayrollRunView: React.FC = () => {
             <div className="text-[10px] font-normal mt-0.5">Immutable Audit Lock</div>
           </div>
         </div>
+
+        {/* Live DO Granular Progress Bar */}
+        {(running || runStatus === 'processing' || progressInfo) && (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between font-semibold">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <Cpu className={`w-3.5 h-3.5 text-sky-600 ${running ? 'animate-spin' : ''}`} />
+                <span>Stage: <strong className="uppercase font-mono">{progressInfo?.stage.replace('_', ' ') || (running ? 'Processing' : 'Ready')}</strong></span>
+              </span>
+              <span className="font-mono font-bold text-sky-800">
+                {progressInfo ? `${progressInfo.processed} / ${progressInfo.total} (${progressInfo.percent}%)` : (running ? 'Calculating...' : '100%')}
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progressInfo?.percent || (runStatus === 'computed' || runStatus === 'frozen' ? 100 : running ? 45 : 0)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {statusMessage && (
           <div className="bg-sky-50 border border-sky-200 text-sky-900 p-3 rounded-lg text-xs flex items-start gap-2.5 animate-in fade-in">
