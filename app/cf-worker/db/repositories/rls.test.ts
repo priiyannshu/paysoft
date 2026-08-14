@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll } from 'vitest';
 import { createDb } from '../client';
 import { getEmployee, getSalaryRecords, getDeclarations, updateEmployee } from './index';
 

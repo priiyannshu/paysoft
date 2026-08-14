@@ -64,9 +64,9 @@ export function createEmployee(
   orgId: string,
   data: Omit<typeof employees.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(employees).values({ ...data, orgId }).returning().get().then((result: any) => {
+  return db.insert(employees).values({ ...data, orgId }).returning().get().then(async (result: any) => {
     if (result) {
-      createAuditLog(db, orgId, {
+      await createAuditLog(db, orgId, {
         action: 'employee.created',
         entityType: 'employee',
         entityId: result.id,
@@ -122,9 +122,9 @@ export function updateEmployee(
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(employees.id, id), eq(employees.orgId, orgId)))
     .returning()
-    .get().then((result: any) => {
+    .get().then(async (result: any) => {
       if (result) {
-        createAuditLog(db, orgId, {
+        await createAuditLog(db, orgId, {
           action: 'employee.updated',
           entityType: 'employee',
           entityId: id,
@@ -228,9 +228,9 @@ export function setConfiguration(
       set: { value, description, updatedAt: new Date() },
     })
     .returning()
-    .get().then((result: any) => {
+    .get().then(async (result: any) => {
       if (result) {
-        createAuditLog(db, orgId, {
+        await createAuditLog(db, orgId, {
           action: 'config.updated',
           entityType: 'configuration',
           entityId: key,
@@ -297,9 +297,9 @@ export function createDeclaration(
   orgId: string,
   data: Omit<typeof declarations.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(declarations).values({ ...data, orgId }).returning().get().then((result: any) => {
+  return db.insert(declarations).values({ ...data, orgId }).returning().get().then(async (result: any) => {
     if (result) {
-      createAuditLog(db, orgId, {
+      await createAuditLog(db, orgId, {
         action: 'declaration.submitted',
         entityType: 'declaration',
         entityId: result.id,
@@ -362,9 +362,9 @@ export function updateDeclarationStatus(
     })
     .where(and(eq(declarations.id, id), eq(declarations.orgId, orgId)))
     .returning()
-    .get().then((result: any) => {
+    .get().then(async (result: any) => {
       if (result) {
-        createAuditLog(db, orgId, {
+        await createAuditLog(db, orgId, {
           action: `declaration.${status}`,
           entityType: 'declaration',
           entityId: id,
@@ -384,9 +384,9 @@ export function createLeaveRecord(
   orgId: string,
   data: Omit<typeof leaveRecords.$inferInsert, 'orgId'>,
 ) {
-  return db.insert(leaveRecords).values({ ...data, orgId }).returning().get().then((result: any) => {
+  return db.insert(leaveRecords).values({ ...data, orgId }).returning().get().then(async (result: any) => {
     if (result) {
-      createAuditLog(db, orgId, {
+      await createAuditLog(db, orgId, {
         action: 'leave.submitted',
         entityType: 'leaveRecord',
         entityId: result.id,
@@ -445,9 +445,9 @@ export function updateLeaveStatus(
     })
     .where(and(eq(leaveRecords.id, id), eq(leaveRecords.orgId, orgId)))
     .returning()
-    .get().then((result: any) => {
+    .get().then(async (result: any) => {
       if (result) {
-        createAuditLog(db, orgId, {
+        await createAuditLog(db, orgId, {
           action: `leave.${status}`,
           entityType: 'leaveRecord',
           entityId: id,
