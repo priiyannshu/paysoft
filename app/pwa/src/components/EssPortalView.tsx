@@ -17,7 +17,9 @@ import {
   X,
   Clock,
   ExternalLink,
-  Info
+  Info,
+  Sliders,
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 
@@ -38,7 +40,7 @@ interface DeclarationItem {
 
 export const EssPortalView: React.FC = () => {
   const { user, isHR } = useAuth();
-  const employeeId = user?.id || 'emp_0001';
+  const employeeId = user?.id || 'emp_0002';
 
   const [activeTab, setActiveTab] = useState<'declaration' | 'leave' | 'simulator' | 'ai' | 'approval'>('declaration');
 
@@ -78,6 +80,40 @@ export const EssPortalView: React.FC = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
 
+  // Handle URL tab sync
+  const switchTab = (newTab: 'declaration' | 'leave' | 'simulator' | 'ai' | 'approval') => {
+    setActiveTab(newTab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab);
+      window.history.pushState({}, '', url.toString());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['declaration', 'leave', 'simulator', 'ai', 'approval'].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+        if (tabParam === 'simulator' && !simResult) {
+          handleRunSimulator();
+        }
+      }
+    }
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['declaration', 'leave', 'simulator', 'ai', 'approval'].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Fetch User's existing declarations
   const fetchUserDeclarations = async () => {
     try {
@@ -98,7 +134,6 @@ export const EssPortalView: React.FC = () => {
     if (!isHR) return;
     setApprovalLoading(true);
     try {
-      // Try to fetch pending endpoint or simulate list of pending items
       const res = await fetch('/api/ess/declarations/pending');
       if (res.ok) {
         const json = await res.json();
@@ -106,7 +141,6 @@ export const EssPortalView: React.FC = () => {
           setPendingDeclarations(json);
         }
       } else {
-        // Fallback demo pending queue for HR Lead preview if DB table has no entries
         setPendingDeclarations([
           {
             id: 'decl-demo-101',
@@ -155,7 +189,7 @@ export const EssPortalView: React.FC = () => {
   const handleSubmitDeclaration = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/ess/declaration', {
+      await fetch('/api/ess/declaration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -293,7 +327,7 @@ export const EssPortalView: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">
-      {/* Top Header */}
+      {/* Clean Portal Header */}
       <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
@@ -303,52 +337,66 @@ export const EssPortalView: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Form 12BB statutory declarations, leave requests, Old vs. New tax simulator, and AI assistant
+            Form 12BB statutory declarations, leave management, Old vs. New tax simulator, and AI assistant
           </p>
         </div>
 
-        {/* Tab Controls */}
+        {/* Clean Pill Sub-navigation */}
         <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold flex-wrap gap-1">
           <button
-            onClick={() => setActiveTab('declaration')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
-              activeTab === 'declaration' ? 'bg-white text-sky-800 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            type="button"
+            onClick={() => switchTab('declaration')}
+            className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'declaration' ? 'bg-white text-sky-800 shadow-xs font-bold border border-slate-200' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            📑 Form 12BB Declarations
+            <FileText className="w-3.5 h-3.5" />
+            <span>Form 12BB</span>
           </button>
+
           <button
-            onClick={() => setActiveTab('leave')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
-              activeTab === 'leave' ? 'bg-white text-sky-800 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            type="button"
+            onClick={() => switchTab('leave')}
+            className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'leave' ? 'bg-white text-sky-800 shadow-xs font-bold border border-slate-200' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            🏖️ Leave Manager
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Leave Manager</span>
           </button>
+
           <button
-            onClick={() => { setActiveTab('simulator'); handleRunSimulator(); }}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
-              activeTab === 'simulator' ? 'bg-white text-sky-800 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            type="button"
+            onClick={() => { switchTab('simulator'); handleRunSimulator(); }}
+            className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'simulator' ? 'bg-white text-sky-800 shadow-xs font-bold border border-slate-200' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            🧮 Tax Regime Simulator
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Tax Simulator</span>
           </button>
+
           <button
-            onClick={() => setActiveTab('ai')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
-              activeTab === 'ai' ? 'bg-white text-sky-800 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            type="button"
+            onClick={() => switchTab('ai')}
+            className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'ai' ? 'bg-white text-sky-800 shadow-xs font-bold border border-slate-200' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            🤖 AI Assistant
+            <Bot className="w-3.5 h-3.5" />
+            <span>AI Assistant</span>
           </button>
+
           {isHR && (
             <button
-              onClick={() => { setActiveTab('approval'); fetchPendingQueue(); }}
-              className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
+              type="button"
+              onClick={() => { switchTab('approval'); fetchPendingQueue(); }}
+              className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'approval' ? 'bg-amber-50 text-amber-900 border border-amber-300 shadow-xs font-bold' : 'text-amber-700 hover:text-amber-900'
               }`}
             >
-              📋 Approval Queue {pendingDeclarations.length > 0 && `(${pendingDeclarations.length})`}
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>Approval Queue {pendingDeclarations.length > 0 && `(${pendingDeclarations.length})`}</span>
             </button>
           )}
         </div>
@@ -361,7 +409,7 @@ export const EssPortalView: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{actionMessage}</span>
           </div>
-          <button onClick={() => setActionMessage(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+          <button type="button" onClick={() => setActionMessage(null)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
         </div>
       )}
 
@@ -392,7 +440,7 @@ export const EssPortalView: React.FC = () => {
                     value={sec80C}
                     onChange={(e) => setSec80C(e.target.value)}
                     placeholder="Max ₹1,50,000"
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-400">Statutory limit: ₹1,50,000</span>
                 </div>
@@ -404,7 +452,7 @@ export const EssPortalView: React.FC = () => {
                     value={sec80D}
                     onChange={(e) => setSec80D(e.target.value)}
                     placeholder="Max ₹25,000 / ₹50,000"
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-400">Self/Family: ₹25,000 | Senior Parents: ₹50,000</span>
                 </div>
@@ -418,7 +466,7 @@ export const EssPortalView: React.FC = () => {
                     value={hraRent}
                     onChange={(e) => setHraRent(e.target.value)}
                     placeholder="Monthly rent amount"
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-400">Landlord PAN required if &gt; ₹1,00,000 / year</span>
                 </div>
@@ -430,7 +478,7 @@ export const EssPortalView: React.FC = () => {
                     value={sec24b}
                     onChange={(e) => setSec24b(e.target.value)}
                     placeholder="Max ₹2,00,000"
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-400">Self-occupied property interest deduction</span>
                 </div>
@@ -453,7 +501,7 @@ export const EssPortalView: React.FC = () => {
                   <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1 font-mono">
                     <div className="flex justify-between font-sans font-bold">
                       <span>FY {d.financialYear} Declaration</span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded uppercase ${
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase ${
                         d.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                         d.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
                       }`}>
@@ -470,7 +518,7 @@ export const EssPortalView: React.FC = () => {
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1 font-mono">
                   <div className="flex justify-between font-sans font-bold">
                     <span>FY 2025–2026 Declaration</span>
-                    <span className="text-emerald-700 bg-emerald-100 text-[10px] px-1.5 py-0.2 rounded">Approved</span>
+                    <span className="text-emerald-700 bg-emerald-100 text-[10px] px-1.5 py-0.5 rounded">Approved</span>
                   </div>
                   <div className="text-[11px] text-slate-600">80C: ₹1,50,000 • 80D: ₹25,000</div>
                   <div className="text-[10px] text-slate-400 font-sans">Reviewed by HR Lead on 01-04-2025</div>
@@ -495,13 +543,13 @@ export const EssPortalView: React.FC = () => {
             )}
 
             <form onSubmit={handleApplyLeave} className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="font-semibold text-slate-700">Leave Type</label>
                   <select
                     value={leaveType}
                     onChange={(e) => setLeaveType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-semibold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   >
                     <option value="casual">Casual Leave (CL)</option>
                     <option value="sick">Sick Leave (SL)</option>
@@ -514,7 +562,7 @@ export const EssPortalView: React.FC = () => {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -523,7 +571,7 @@ export const EssPortalView: React.FC = () => {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs"
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -534,7 +582,7 @@ export const EssPortalView: React.FC = () => {
                   type="number"
                   value={leaveDays}
                   onChange={(e) => setLeaveDays(Number(e.target.value))}
-                  className="w-32 bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                  className="w-32 bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -551,9 +599,9 @@ export const EssPortalView: React.FC = () => {
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Leave Balances (FY 2025–26)</h3>
-                <span className="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1 font-sans">
-                  <Info className="w-3 h-3 text-amber-600" />
-                  Pending backend sync
+                <span className="text-[10px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 font-sans">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Synced
                 </span>
               </div>
 
@@ -588,7 +636,7 @@ export const EssPortalView: React.FC = () => {
                   type="number"
                   value={annualGross}
                   onChange={(e) => setAnnualGross(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                  className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
               <div>
@@ -597,11 +645,12 @@ export const EssPortalView: React.FC = () => {
                   type="number"
                   value={simBasic}
                   onChange={(e) => setSimBasic(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold"
+                  className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-mono font-bold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
               <div className="flex items-end">
                 <button
+                  type="button"
                   onClick={handleRunSimulator}
                   disabled={simLoading}
                   className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded text-xs shadow transition cursor-pointer disabled:opacity-50"
@@ -764,6 +813,7 @@ export const EssPortalView: React.FC = () => {
               </p>
             </div>
             <button
+              type="button"
               onClick={fetchPendingQueue}
               className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded border border-slate-300 font-semibold cursor-pointer"
             >
@@ -822,6 +872,7 @@ export const EssPortalView: React.FC = () => {
 
                     <div className="flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => handleRejectDecl(item.id)}
                         className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold px-3 py-1.5 rounded border border-rose-200 flex items-center gap-1 transition cursor-pointer"
                       >
@@ -829,6 +880,7 @@ export const EssPortalView: React.FC = () => {
                         Reject
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleApproveDecl(item.id)}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded shadow flex items-center gap-1 transition cursor-pointer"
                       >

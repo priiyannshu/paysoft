@@ -14,7 +14,11 @@ import {
   X,
   Shield,
   FileSpreadsheet,
-  Sliders
+  Sliders,
+  Bot,
+  Calendar,
+  Sparkles,
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { useOrg } from './hooks/useOrg';
@@ -26,8 +30,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
   const [currentTime, setCurrentTime] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState('');
 
-  const { user, role, switchRole, logout } = useAuth();
+  const { user, role, switchRole, logout, isEmployee, isHR } = useAuth();
   const { org } = useOrg();
 
   useEffect(() => {
@@ -49,6 +54,13 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setCurrentTab(params.get('tab') || '');
+    }
+  }, [currentPath]);
+
   const getRoleDisplayName = (userRole: string) => {
     switch (userRole) {
       case 'super_admin': return 'Super Admin';
@@ -59,104 +71,155 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
     }
   };
 
-  // Nav modules for sidebar drawer filtered by role
-  const allNavModules = [
-    {
-      label: 'Executive Overview',
-      href: '/',
-      icon: Building2,
-      desc: 'Overview, verification checklist & monthly runs',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
-    },
-    {
-      label: 'Staff Information (Master)',
-      href: '/employees',
-      icon: Users,
-      desc: '385 staff records, salary structures & taxation',
-      roles: ['super_admin', 'hr_lead']
-    },
-    {
-      label: 'Salary Statistics',
-      href: '/salary-stats',
-      icon: Calculator,
-      desc: 'Statutory formulas, department snapshots & trends',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
-    },
-    {
-      label: 'Annual Statements',
-      href: '/annual-statements',
-      icon: FileText,
-      desc: 'Full 12-month earning cards with statutory heads',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
-    },
-    {
-      label: 'Zero-Hassle Reports',
-      href: '/reports',
-      icon: Download,
-      desc: 'Bank Advice, EPF ECR, ESI Returns, Form 16',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
-    },
-    {
-      label: 'Payroll Console',
-      href: '/payroll',
-      icon: Play,
-      desc: 'Execute monthly calculations & freeze periods',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
-    },
-    {
+  // Nav items for desktop header bar based on active role
+  const getDesktopNavItems = () => {
+    if (isEmployee) {
+      return [
+        { label: 'Form 12BB', href: '/ess?tab=declaration', icon: FileText, tab: 'declaration' },
+        { label: 'Leave Manager', href: '/ess?tab=leave', icon: Calendar, tab: 'leave' },
+        { label: 'Tax Simulator', href: '/ess?tab=simulator', icon: Sliders, tab: 'simulator' },
+        { label: 'AI Assistant', href: '/ess?tab=ai', icon: Bot, tab: 'ai' },
+        { label: 'My Statement', href: '/annual-statements', icon: FileSpreadsheet },
+      ];
+    }
+
+    // Admin / HR / Accountant top navigation
+    const items = [
+      { label: 'Overview', href: '/', icon: Building2, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
+      { label: 'Staff Master', href: '/employees', icon: Users, roles: ['super_admin', 'hr_lead'] },
+      { label: 'Payroll Console', href: '/payroll', icon: Play, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
+      { label: 'Salary Stats', href: '/salary-stats', icon: Calculator, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
+      { label: 'Annual Statements', href: '/annual-statements', icon: FileText, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
+      { label: 'Reports', href: '/reports', icon: Download, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
+    ];
+
+    if (isHR) {
+      items.push({ label: 'Approvals', href: '/ess?tab=approval', icon: CheckSquare, roles: ['super_admin', 'hr_lead'] });
+    } else {
+      items.push({ label: 'ESS Portal', href: '/ess', icon: UserCheck, roles: ['super_admin', 'hr_lead', 'payroll_accountant'] });
+    }
+
+    return items.filter(item => !item.roles || item.roles.includes(role));
+  };
+
+  // Drawer modules filtered strictly by role
+  const getDrawerModules = () => {
+    if (isEmployee) {
+      return [
+        {
+          label: 'Form 12BB Tax Declarations',
+          href: '/ess?tab=declaration',
+          icon: FileText,
+          desc: 'Submit proposed Section 80C, 80D & HRA declarations',
+          tab: 'declaration'
+        },
+        {
+          label: 'Leave Manager',
+          href: '/ess?tab=leave',
+          icon: Calendar,
+          desc: 'Apply for Casual, Sick & Earned leaves',
+          tab: 'leave'
+        },
+        {
+          label: 'Tax Regime Simulator',
+          href: '/ess?tab=simulator',
+          icon: Sliders,
+          desc: 'Compare Old vs New Tax Regime tax savings',
+          tab: 'simulator'
+        },
+        {
+          label: 'AI Payroll & Tax Assistant',
+          href: '/ess?tab=ai',
+          icon: Bot,
+          desc: '24/7 AI chat for TDS, PF, and tax queries',
+          tab: 'ai'
+        },
+        {
+          label: 'My Annual Earning Statement',
+          href: '/annual-statements',
+          icon: FileSpreadsheet,
+          desc: 'View 12-month salary ledger and Form 16 Part B'
+        },
+      ];
+    }
+
+    // Administrative roles
+    const modules = [
+      {
+        label: 'Executive Overview',
+        href: '/',
+        icon: Building2,
+        desc: 'Institutional overview, verification checklist & live stats',
+        roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+      },
+      {
+        label: 'Staff Master Directory',
+        href: '/employees',
+        icon: Users,
+        desc: '385 staff records, salary structures & taxation',
+        roles: ['super_admin', 'hr_lead']
+      },
+      {
+        label: 'Payroll Processing Console',
+        href: '/payroll',
+        icon: Play,
+        desc: 'Execute monthly calculations & freeze periods',
+        roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+      },
+      {
+        label: 'Salary Statistics & Trends',
+        href: '/salary-stats',
+        icon: Calculator,
+        desc: 'Statutory formulas, department snapshots & trends',
+        roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+      },
+      {
+        label: 'Annual Statements (12-Month)',
+        href: '/annual-statements',
+        icon: FileText,
+        desc: 'Full 12-month earning cards and Form 16 Part B',
+        roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+      },
+      {
+        label: 'Zero-Hassle Reports Center',
+        href: '/reports',
+        icon: Download,
+        desc: 'Bank Advice, EPF ECR, ESI Returns, Form 16',
+        roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+      },
+    ];
+
+    if (isHR) {
+      modules.push({
+        label: 'HR Approval Queue',
+        href: '/ess?tab=approval',
+        icon: CheckSquare,
+        desc: 'Review and approve/reject Form 12BB and leave requests',
+        roles: ['super_admin', 'hr_lead']
+      });
+    }
+
+    modules.push({
       label: 'Employee Self-Service (ESS)',
       href: '/ess',
       icon: UserCheck,
       desc: 'Form 12BB declarations, leave & tax simulator',
-      roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee']
-    },
-    {
-      label: 'Tax Regime Simulator',
-      href: '/ess?tab=simulator',
-      icon: Sliders,
-      desc: 'Compare Old vs New Tax Regimes',
-      roles: ['employee']
-    }
+      roles: ['super_admin', 'hr_lead', 'payroll_accountant']
+    });
+
+    return modules.filter(m => !m.roles || m.roles.includes(role));
+  };
+
+  // Statutory Quick Downloads (Admin / HR / Accountant)
+  const statutoryShortcuts = [
+    { label: 'Bank Advice', href: '/reports', icon: Download, color: 'text-sky-400', hoverColor: 'hover:text-sky-300' },
+    { label: 'PF ECR Challan', href: '/reports', icon: Shield, color: 'text-emerald-400', hoverColor: 'hover:text-emerald-300' },
+    { label: 'ESI Return', href: '/reports', icon: FileSpreadsheet, color: 'text-indigo-400', hoverColor: 'hover:text-indigo-300' },
+    { label: 'Form 16 Part B', href: '/annual-statements', icon: FileText, color: 'text-amber-400', hoverColor: 'hover:text-amber-300' },
   ];
 
-  const visibleNavModules = allNavModules.filter(m => m.roles.includes(role));
-
-  // Filtered dropdown menu items
-  const masterItems = [
-    { label: 'Staff Information (Master)', href: '/employees', roles: ['super_admin', 'hr_lead'] },
-    { label: 'Department Master', href: '/employees?view=departments', roles: ['super_admin', 'hr_lead'] },
-    { label: 'Salary Heads & Slabs', href: '/salary-stats', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: 'Tax Declaration Master', href: '/ess', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-  ].filter(item => item.roles.includes(role));
-
-  const transactionItems = [
-    { label: '▶ Run Monthly Payroll', href: '/payroll', roles: ['super_admin', 'hr_lead', 'payroll_accountant'], className: 'font-semibold text-sky-400' },
-    { label: '🔒 Freeze Payroll Month', href: '/payroll', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: '📋 Leave Application & Approval', href: '/ess', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-    { label: '📑 Form 12BB Review', href: '/ess', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-  ].filter(item => item.roles.includes(role));
-
-  const reportItems = [
-    { label: '📄 Bank Payment Advice (XLSX)', href: '/reports', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: '🏛️ EPFO Electronic Challan (ECR)', href: '/reports', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: '🏥 ESI Monthly Return', href: '/reports', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: '📑 Employee Pay Slip', href: role === 'employee' ? '/ess' : '/reports', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-    { label: '⚖️ Form 16 Part B Certificate', href: role === 'employee' ? '/ess' : '/reports', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-    { label: '📜 Annual Earning Statement', href: '/annual-statements', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-  ].filter(item => item.roles.includes(role));
-
-  const utilityItems = [
-    { label: '🔍 Live Compliance Audit', href: '/?view=audit', roles: ['super_admin', 'hr_lead'] },
-    { label: '🧮 Tax Regime Simulator', href: '/ess?tab=simulator', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-  ].filter(item => item.roles.includes(role));
-
-  // Sidebar drawer statutory shortcuts
-  const statutoryShortcuts = [
-    { label: 'Bank Advice', href: '/reports', icon: Download, color: 'text-sky-400', hoverColor: 'hover:text-sky-300', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: 'PF ECR Challan', href: '/reports', icon: Shield, color: 'text-emerald-400', hoverColor: 'hover:text-emerald-300', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: 'ESI Return', href: '/reports', icon: FileSpreadsheet, color: 'text-indigo-400', hoverColor: 'hover:text-indigo-300', roles: ['super_admin', 'hr_lead', 'payroll_accountant'] },
-    { label: 'Form 16 Part B', href: role === 'employee' ? '/ess' : '/annual-statements', icon: FileText, color: 'text-amber-400', hoverColor: 'hover:text-amber-300', roles: ['super_admin', 'hr_lead', 'payroll_accountant', 'employee'] },
-  ].filter(item => item.roles.includes(role));
+  const desktopNavItems = getDesktopNavItems();
+  const drawerModules = getDrawerModules();
 
   const currentUser = user || {
     name: 'PSR Computers',
@@ -169,13 +232,13 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
     <>
       <header className="bg-slate-900 text-white shadow-md select-none sticky top-0 z-40">
         {/* Top Application Bar */}
-        <div className="bg-slate-950 border-b border-slate-800 px-3 py-2 flex items-center justify-between text-xs">
+        <div className="bg-slate-950 border-b border-slate-800 px-3.5 py-2 flex items-center justify-between text-xs">
+          {/* Brand & Organization */}
           <div className="flex items-center space-x-3">
-            {/* Hamburger Menu Toggle Button */}
             <button
               onClick={() => setSidebarOpen(true)}
               aria-label="Open Navigation Menu"
-              className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
+              className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer"
             >
               <Menu className="w-5 h-5 text-sky-400" />
               <span className="font-semibold text-xs tracking-wide hidden sm:inline">Menu</span>
@@ -183,11 +246,12 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
 
             <span className="text-slate-700">|</span>
 
-            {/* Brand Logo & Dynamic Organization Identity */}
-            <div className="flex items-center space-x-2 font-bold text-sky-400 text-sm tracking-wide">
-              <span className="bg-sky-500 text-slate-950 px-1.5 py-0.5 rounded font-black text-xs">PS3</span>
+            {/* Enterprise Logo */}
+            <a href={isEmployee ? '/ess' : '/'} className="flex items-center space-x-2 font-bold text-sky-400 text-sm tracking-wide hover:opacity-90 transition">
+              <span className="bg-sky-500 text-slate-950 px-2 py-0.5 rounded font-black text-xs">PS</span>
               <span>PaySoft</span>
-            </div>
+            </a>
+
             <span className="text-slate-600 hidden md:inline">•</span>
             <span className="text-slate-200 font-semibold hidden md:inline">{org.name}</span>
             <span className="text-slate-600 hidden lg:inline">•</span>
@@ -196,121 +260,66 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
             </span>
           </div>
 
-          {/* Center / Right ERP Dropdown Menus for Fast Desktop Access */}
-          <div className="hidden xl:flex items-center space-x-1">
-            {/* Master Dropdown (hidden if no visible master items for employee) */}
-            {masterItems.length > 0 && (
-              <div className="relative group">
-                <button className="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded font-medium flex items-center space-x-1">
-                  <span>Master</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
-                </button>
-                <div className="absolute left-0 mt-1 w-52 bg-slate-800 border border-slate-700 rounded-md shadow-2xl py-1 z-50 hidden group-hover:block">
-                  {masterItems.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.href}
-                      className="block px-3 py-1.5 hover:bg-sky-900/50 hover:text-sky-300"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+          {/* Desktop Direct Role-Filtered Navigation Tabs */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {desktopNavItems.map((item, idx) => {
+              const isEssTab = item.href.startsWith('/ess?tab=');
+              const isActive = isEssTab
+                ? currentPath === '/ess' && currentTab === item.tab
+                : currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href) && !currentPath.includes('?tab='));
 
-            {/* Transactions Dropdown */}
-            {transactionItems.length > 0 && (
-              <div className="relative group">
-                <button className="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded font-medium flex items-center space-x-1">
-                  <span>Transactions</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
-                </button>
-                <div className="absolute left-0 mt-1 w-56 bg-slate-800 border border-slate-700 rounded-md shadow-2xl py-1 z-50 hidden group-hover:block">
-                  {transactionItems.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.href}
-                      className={`block px-3 py-1.5 hover:bg-sky-900/50 hover:text-sky-300 ${item.className || ''}`}
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+              const Icon = item.icon;
 
-            {/* Reports Dropdown */}
-            {reportItems.length > 0 && (
-              <div className="relative group">
-                <button className="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded font-medium flex items-center space-x-1">
-                  <span>Report(s)</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
-                </button>
-                <div className="absolute left-0 mt-1 w-56 bg-slate-800 border border-slate-700 rounded-md shadow-2xl py-1 z-50 hidden group-hover:block">
-                  {reportItems.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.href}
-                      className="block px-3 py-1.5 hover:bg-sky-900/50 hover:text-sky-300"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Utilities Dropdown */}
-            {utilityItems.length > 0 && (
-              <div className="relative group">
-                <button className="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded font-medium flex items-center space-x-1">
-                  <span>Utilities</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
-                </button>
-                <div className="absolute left-0 mt-1 w-52 bg-slate-800 border border-slate-700 rounded-md shadow-2xl py-1 z-50 hidden group-hover:block">
-                  {utilityItems.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.href}
-                      className="block px-3 py-1.5 hover:bg-sky-900/50 hover:text-sky-300"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+              return (
+                <a
+                  key={idx}
+                  href={item.href}
+                  className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition ${
+                    isActive
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-sky-400' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </nav>
 
           {/* User Session, Role Switcher & Clock */}
           <div className="flex items-center space-x-3">
             {/* Real-time Clock */}
-            <div className="hidden sm:flex items-center space-x-1.5 text-slate-400 font-mono text-[11px] bg-slate-900/80 px-2 py-1 rounded border border-slate-800">
+            <div className="hidden xl:flex items-center space-x-1.5 text-slate-400 font-mono text-[11px] bg-slate-900/80 px-2 py-1 rounded border border-slate-800">
               <Clock className="w-3.5 h-3.5 text-sky-400" />
-              <span>{currentTime || 'Loading...'}</span>
+              <span>{currentTime || 'Live'}</span>
             </div>
 
-            {/* Role Switcher Dropdown */}
+            {/* Single Consolidated Persona & Role Switcher */}
             <div className="relative group">
-              <button className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700/80 px-2.5 py-1 rounded-md border border-slate-700 transition">
-                <span className="text-slate-300 font-medium text-xs max-w-[120px] truncate">
+              <button
+                type="button"
+                className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700/80 px-2.5 py-1 rounded-md border border-slate-700 transition cursor-pointer"
+              >
+                <span className="text-slate-300 font-medium text-xs max-w-[130px] truncate">
                   {currentUser.name || 'User'}
                 </span>
-                <span className="bg-sky-950 text-sky-300 px-1.5 py-0.2 rounded text-[10px] uppercase font-bold border border-sky-800">
+                <span className="bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border border-sky-800">
                   {getRoleDisplayName(currentUser.role)}
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
 
-              <div className="absolute right-0 mt-1 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl py-2 z-50 hidden group-hover:block">
+              {/* Persona Dropdown Menu */}
+              <div className="absolute right-0 mt-1 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl py-2 z-50 hidden group-hover:block group-focus-within:block">
                 <div className="px-3 pb-2 mb-1 text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-700 font-bold">
                   Switch Active Persona
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => switchRole('admin@demo.paysoft', 'super_admin', 'PSR Computers')}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition ${
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition cursor-pointer ${
                     currentUser.role === 'super_admin' ? 'bg-sky-900/40 text-sky-300 font-semibold' : 'text-slate-200'
                   }`}
                 >
@@ -325,8 +334,9 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => switchRole('hr@demo.paysoft', 'hr_lead', 'Priya Sharma (HR Lead)')}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition ${
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition cursor-pointer ${
                     currentUser.role === 'hr_lead' ? 'bg-sky-900/40 text-sky-300 font-semibold' : 'text-slate-200'
                   }`}
                 >
@@ -341,8 +351,9 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => switchRole('accountant@demo.paysoft', 'payroll_accountant', 'Ramesh Verma (Accountant)')}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition ${
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition cursor-pointer ${
                     currentUser.role === 'payroll_accountant' ? 'bg-sky-900/40 text-sky-300 font-semibold' : 'text-slate-200'
                   }`}
                 >
@@ -357,8 +368,9 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 </button>
 
                 <button
-                  onClick={() => switchRole('sakshi.nair@example.com', 'employee', 'Sakshi Nair (Employee)')}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition ${
+                  type="button"
+                  onClick={() => switchRole('sakshi.nair@example.com', 'employee', 'Sakshi Nair (Employee)', 'emp_0002')}
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-700 flex items-center justify-between transition cursor-pointer ${
                     currentUser.role === 'employee' ? 'bg-sky-900/40 text-sky-300 font-semibold' : 'text-slate-200'
                   }`}
                 >
@@ -372,10 +384,12 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                   {currentUser.role === 'employee' && <span className="text-sky-400 text-xs">✓</span>}
                 </button>
 
+                {/* Single, Clear Sign Out Option */}
                 <div className="border-t border-slate-700 mt-1 pt-1 px-3">
                   <button
+                    type="button"
                     onClick={logout}
-                    className="w-full text-left py-1 text-rose-400 hover:text-rose-300 text-xs flex items-center gap-1.5"
+                    className="w-full text-left py-1 text-rose-400 hover:text-rose-300 text-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>
@@ -383,20 +397,11 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 </div>
               </div>
             </div>
-
-            {/* Logout Button */}
-            <button
-              onClick={logout}
-              title="Logout"
-              className="text-slate-400 hover:text-rose-400 transition p-1 rounded hover:bg-slate-800"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
 
-      {/* Slide-out Hamburger Navigation Drawer */}
+      {/* Slide-out Navigation Menu Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
@@ -423,8 +428,9 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setSidebarOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -433,16 +439,20 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
               {/* Modules List */}
               <div className="p-3 space-y-1">
                 <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                  Core Modules
+                  {isEmployee ? 'Employee Self-Service' : 'Enterprise Modules'}
                 </div>
 
-                {visibleNavModules.map((item) => {
-                  const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
+                {drawerModules.map((item, idx) => {
+                  const isEssTab = item.href.startsWith('/ess?tab=');
+                  const isActive = isEssTab
+                    ? currentPath === '/ess' && currentTab === item.tab
+                    : currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href) && !currentPath.includes('?tab='));
+
                   const Icon = item.icon;
 
                   return (
                     <a
-                      key={item.href}
+                      key={idx}
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
                       className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition ${
@@ -461,11 +471,11 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                 })}
               </div>
 
-              {/* Quick Statutory Shortcuts (Role Filtered) */}
-              {statutoryShortcuts.length > 0 && (
+              {/* Quick Statutory Shortcuts (Only for Admin / HR / Accountant) */}
+              {!isEmployee && (
                 <div className="p-3 border-t border-slate-800 space-y-1">
                   <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Statutory Downloads & Utilities
+                    Statutory Downloads
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 px-2">
                     {statutoryShortcuts.map((item, idx) => {
@@ -495,9 +505,10 @@ export const Header: React.FC<HeaderProps> = ({ currentPath = '/' }) => {
                   <div className="text-[11px] text-sky-400">{getRoleDisplayName(currentUser.role)}</div>
                 </div>
                 <button
+                  type="button"
                   onClick={logout}
-                  className="p-1.5 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800"
-                  title="Logout"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition cursor-pointer"
+                  title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>

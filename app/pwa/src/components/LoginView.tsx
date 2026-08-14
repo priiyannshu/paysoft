@@ -103,7 +103,7 @@ export const LoginView: React.FC = () => {
           PS
         </div>
         <h2 className="text-2xl font-extrabold text-white tracking-tight">
-          PaySoft v3 Enterprise Portal
+          PaySoft Enterprise Portal
         </h2>
         <p className="text-xs text-slate-400">
           Enterprise Indian Organization Payroll & Human Resources Management

@@ -19,7 +19,11 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+import { useAuth } from './hooks/useAuth';
+import { AccessDenied } from './ui/AccessDenied';
+
 export const EmployeeMasterView: React.FC = () => {
+  const { isEmployee, canAccess } = useAuth();
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,14 +126,57 @@ export const EmployeeMasterView: React.FC = () => {
   const totalDeductions = pfDeduction + esiDeduction + profTax + tds;
   const netPay = grossEarnings - totalDeductions;
 
-  const handleSaveEmployee = () => {
+  const handleSaveEmployee = async () => {
+    if (!selectedEmployee) return;
     setSavingNotice(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/employees/${selectedEmployee.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          email: editForm.email,
+          phone: editForm.phone,
+          departmentId: editForm.departmentId,
+          basicPay: Number(editForm.basicPay),
+          daPercent: Number(editForm.daPercent),
+          hraPercent: Number(editForm.hraPercent),
+          panNumber: editForm.panNumber,
+          aadhaarNumber: editForm.aadhaarNumber,
+          pfUan: editForm.pfUan,
+          esiNumber: editForm.esiNumber,
+          bankName: editForm.bankName,
+          bankAccount: editForm.bankAccount,
+          bankIfsc: editForm.bankIfsc,
+          taxRegime: editForm.taxRegime,
+          status: editForm.status,
+        })
+      });
+      if (res.ok) {
+        fetchEmployees();
+        setTimeout(() => {
+          setSavingNotice(false);
+          setSelectedEmployee(null);
+        }, 500);
+      } else {
+        setSavingNotice(false);
+      }
+    } catch (e) {
+      console.error('Error saving employee:', e);
       setSavingNotice(false);
-      setSelectedEmployee(null);
-      fetchEmployees();
-    }, 800);
+    }
   };
+
+  // RBAC Guard - Employees cannot access confidential staff records
+  if (isEmployee || !canAccess(['super_admin', 'hr_lead'])) {
+    return (
+      <AccessDenied
+        title="Staff Directory Access Restricted"
+        message="Confidential employee master records, PAN/Aadhaar details, and salary configurations are restricted to HR Leads and Super Admins."
+      />
+    );
+  }
 
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">

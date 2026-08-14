@@ -43,7 +43,7 @@ export const SalaryStatsView: React.FC = () => {
       }
     } catch (e) {
       console.error('Error fetching salary stats:', e);
-    } fontinally: {
+    } finally {
       setLoading(false);
     }
   };

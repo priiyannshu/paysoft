@@ -217,6 +217,47 @@ apiRoutes.get('/employees/:id', async (c) => {
   })
 })
 
+apiRoutes.put('/employees/:id', async (c) => {
+  const orgId = getOrgId(c)
+  const id = c.req.param('id')
+  const db = createDb(c.env.DB)
+  const body = await c.req.json()
+
+  const existing = await db.select().from(employees)
+    .where(and(eq(employees.id, id), eq(employees.orgId, orgId)))
+    .get()
+
+  if (!existing) {
+    return c.json({ error: 'Employee not found' }, 404)
+  }
+
+  const updated = await db.update(employees)
+    .set({
+      firstName: body.firstName !== undefined ? body.firstName : existing.firstName,
+      lastName: body.lastName !== undefined ? body.lastName : existing.lastName,
+      email: body.email !== undefined ? body.email : existing.email,
+      phone: body.phone !== undefined ? body.phone : existing.phone,
+      departmentId: body.departmentId !== undefined ? body.departmentId : existing.departmentId,
+      basicPay: body.basicPay !== undefined ? Number(body.basicPay) : existing.basicPay,
+      daPercent: body.daPercent !== undefined ? Number(body.daPercent) : existing.daPercent,
+      hraPercent: body.hraPercent !== undefined ? Number(body.hraPercent) : existing.hraPercent,
+      panNumber: body.panNumber !== undefined ? body.panNumber : existing.panNumber,
+      aadhaarNumber: body.aadhaarNumber !== undefined ? body.aadhaarNumber : existing.aadhaarNumber,
+      pfUan: body.pfUan !== undefined ? body.pfUan : existing.pfUan,
+      esiNumber: body.esiNumber !== undefined ? body.esiNumber : existing.esiNumber,
+      bankName: body.bankName !== undefined ? body.bankName : existing.bankName,
+      bankAccount: body.bankAccount !== undefined ? body.bankAccount : existing.bankAccount,
+      bankIfsc: body.bankIfsc !== undefined ? body.bankIfsc : existing.bankIfsc,
+      taxRegime: body.taxRegime !== undefined ? body.taxRegime : existing.taxRegime,
+      status: body.status !== undefined ? body.status : existing.status,
+    })
+    .where(and(eq(employees.id, id), eq(employees.orgId, orgId)))
+    .returning()
+    .get()
+
+  return c.json(updated || { success: true })
+})
+
 // ─── Departments ─────────────────────────────────────────────────────────────
 apiRoutes.get('/departments', async (c) => {
   const orgId = getOrgId(c)
